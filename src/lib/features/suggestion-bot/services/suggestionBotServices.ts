@@ -8,8 +8,14 @@ import { toast } from 'svelte-sonner';
 import { preferenceStore } from '$lib/stores/preferenceStore';
 import { ignoreGrammarStore } from '$lib/stores/ignoreStore';
 import { getCount } from './countService';
+import { PUBLIC_BACKEND_URL } from '$env/static/public';
 
-const url = import.meta.env.VITE_BACKEND_URL || 'NOTHING';
+// const url = import.meta.env.VITE_BACKEND_URL || 'NOTHING';
+const url = PUBLIC_BACKEND_URL || 'NOTHING';
+
+console.log('Backend URL:', url);
+
+// const url = 'http://localhost:80';
 
 export async function grammarCheckService(nextSlide: () => void) {
 	try {

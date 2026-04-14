@@ -1,6 +1,8 @@
+import { PUBLIC_BACKEND_URL } from '$env/static/public';
 import { countStore } from '$lib/stores/countStore';
 
-const url = import.meta.env.VITE_BACKEND_URL || 'NOTHING';
+// const url = import.meta.env.VITE_BACKEND_URL || 'NOTHING';
+const url = PUBLIC_BACKEND_URL || 'NOTHING';
 
 export async function getCount() {
 	try {

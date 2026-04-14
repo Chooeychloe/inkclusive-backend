@@ -7,7 +7,7 @@
 >
 	<div class="flex items-center justify-center gap-2">
 		<span class="material-symbols-outlined s40"> history_edu</span>
-		<h1 class="hidden font-Leckerli-One text-2xl lg:inline">Fair Write</h1>
+		<h1 class="hidden font-Leckerli-One text-2xl lg:inline">Inkclusive</h1>
 		<p class="text-2xl font-light text-neutral-500">Admin</p>
 	</div>
 </div>

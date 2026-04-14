@@ -73,7 +73,7 @@
 				class="flex h-14 items-center justify-center gap-2 border-b border-solid border-stone-300 bg-stone-50 lg:justify-start"
 			>
 				<span class="material-symbols-outlined s40"> history_edu</span>
-				<h1 class="hidden font-Leckerli-One text-2xl lg:inline">Fair Write</h1>
+				<h1 class="hidden font-Leckerli-One text-2xl lg:inline">Inkclusive</h1>
 			</div>
 
 			<div class="mb-5 hidden border-b border-dashed border-stone-400 px-3 py-2 lg:inline">
@@ -251,17 +251,17 @@
 				</Dialog.Trigger>
 				<Dialog.Content>
 					<Dialog.Header>
-						<Dialog.Title>What's Fair Write?</Dialog.Title>
+						<Dialog.Title>What's Inkclusive?</Dialog.Title>
 						<Dialog.Description>
-							&nbsp; Fair Write, a web-based text editing application integrated with gender-fair
-							language capabilities. Fair Write provides suggestions and corrections to help users
+							&nbsp; Inkclusive, a web-based text editing application integrated with gender-fair
+							language capabilities. Inkclusive provides suggestions and corrections to help users
 							avoid biased or gender-exclusive terms in their writing. Whether drafting professional
 							documents, academic papers, or casual content,
 							<br />
 							<br />
 							&nbsp; Its integrated features include intelligent grammar checking, inclusive vocabulary
 							alternatives, and style recommendations aligned with current gender-sensitive language
-							standards. Fair Write is an essential tool for individuals and organizations striving for
+							standards. Inkclusive is an essential tool for individuals and organizations striving for
 							more conscious and inclusive communication.
 						</Dialog.Description>
 					</Dialog.Header>
@@ -273,10 +273,10 @@
 			<AlertDialog.Root open={true}>
 				<AlertDialog.Content>
 					<AlertDialog.Header>
-						<AlertDialog.Title>Welcome To Fair Write!</AlertDialog.Title>
+						<AlertDialog.Title>Welcome To Inkclusive!</AlertDialog.Title>
 						<AlertDialog.Description>
 							<p class="pb-1 text-sm">
-								By Clicking "Continue", you agree to allow Fair Write to temporarily process any
+								By Clicking "Continue", you agree to allow Inkclusive to temporarily process any
 								documents or text you create or upload in order to analyze them for errors or
 								suggestions.You also acknowledge and support our commitment to promoting gender
 								fairness, and consent to the use of inclusive language checks as part of the

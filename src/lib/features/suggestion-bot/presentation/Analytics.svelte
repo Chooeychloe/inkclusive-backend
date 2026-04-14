@@ -45,7 +45,7 @@
 	<Card.Root class="my-2">
 		<Card.Header>
 			<Card.Title class=" border-b border-dashed border-stone-500 pb-2 text-lg font-bold"
-				>Fair Write's Total Scanned Files:</Card.Title
+				>Inkclusive's Total Scanned Files:</Card.Title
 			>
 		</Card.Header>
 		<Card.Content class="text-base text-blue-500">
