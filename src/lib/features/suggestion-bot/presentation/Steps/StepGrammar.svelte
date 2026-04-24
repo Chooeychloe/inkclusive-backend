@@ -76,7 +76,7 @@
 		</Card.Header>
 		<Card.Content class="flex flex-col gap-2">
 			<Button
-				class="flex w-full items-center  justify-between border border-blue-500 bg-blue-50  text-base font-bold text-blue-500 hover:bg-blue-500 hover:text-blue-50"
+			class="step-6 flex  w-full items-center  justify-between border border-purple-500 bg-purple-50 p-3  text-base font-bold text-purple-500 hover:bg-purple-500 hover:text-purple-50"
 				disabled={isEmpty || isLoading || $waitStore}
 				onclick={proceed}
 				><p>Proceed</p>

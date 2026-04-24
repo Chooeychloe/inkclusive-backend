@@ -49,14 +49,14 @@
 		class="flex h-14 w-full items-center justify-between gap-2 border-b border-solid border-stone-300 bg-stone-50 p-3"
 	>
 		<div class="flex items-center justify-start gap-2">
-			<span class="material-symbols-outlined s36 text-stone-500">psychology</span>
-			<h2 class="text-xl font-semibold">Preference</h2>
+			<span class="material-symbols-outlined  s36 text-purple-700">psychology</span>
+			<h2 class="text-xl text-purple-700 font-semibold">Preference</h2>
 		</div>
 
 		<Tooltip.Provider>
 			<Tooltip.Root>
 				<Tooltip.Trigger>
-					<span class="material-symbols-outlined s26 text-stone-500">info</span>
+					<span class="material-symbols-outlined s26 text-purple-700">info</span>
 				</Tooltip.Trigger>
 				<Tooltip.Content class="w-64">
 					<p>
@@ -74,15 +74,15 @@
 				class="group flex items-center justify-start gap-2"
 				onclick={() => toPreferenceModule()}
 			>
-				<span class="material-symbols-outlined s26 text-stone-500">arrow_back</span>
-				<span class="text-base group-hover:underline"> Back </span>
+				<span class="material-symbols-outlined s26 text-purple-700">arrow_back</span>
+				<span class="text-base text-purple-700 group-hover:underline"> Back </span>
 			</button>
 		</div>
 		<!--inputs -->
 		<div class=" flex w-full flex-col items-center justify-center gap-3">
 			{#each preferences as preference, index}
 				<div class="flex items-center justify-center gap-2">
-					<div class="flex w-full max-w-sm flex-col gap-1.5">
+					<div class="flex w-full  text-purple-700 max-w-sm flex-col gap-1.5">
 						{#if index === 0}
 							<Label for="Name">Name</Label>
 						{/if}
@@ -98,7 +98,7 @@
 							placeholder="Insert your name..."
 						/>
 					</div>
-					<div class="flex w-full max-w-sm flex-col gap-1.5">
+					<div class="flex w-full text-purple-700 max-w-sm flex-col gap-1.5">
 						{#if index === 0}
 							<Label for="Pronoun">Pronouns</Label>
 						{/if}
@@ -118,9 +118,9 @@
 								{/if}
 							</Select.Trigger>
 							<Select.Content>
-								<Select.Item value="male">He/His</Select.Item>
-								<Select.Item value="female">She/Her</Select.Item>
-								<Select.Item value="gender_fair">They/Them</Select.Item>
+								<Select.Item value="male" class="text-purple-700 ">He/His</Select.Item>
+								<Select.Item value="female" class="text-purple-700">She/Her</Select.Item>
+								<Select.Item value="gender_fair" class="text-purple-700">They/Them</Select.Item>
 							</Select.Content>
 						</Select.Root>
 					</div>
@@ -141,11 +141,11 @@
 			{/each}
 
 			{#if preferences.length === 0}
-				<p class=" text-base text-muted-foreground">No Preferences</p>
+				<p class=" text-base text-purple-700 ">No Preferences</p>
 			{/if}
 		</div>
 		<!--add-->
-		<div class="flex w-full items-center justify-center">
+		<div class="flex w-full  text-purple-700 items-center justify-center">
 			<Button
 				class="h-10 w-10 rounded-full"
 				variant="outline"
@@ -156,7 +156,7 @@
 					console.log(localStorage.getItem('preferences'));
 				}}
 			>
-				<span class="material-symbols-outlined s26 text-stone-500">add</span></Button
+				<span class="material-symbols-outlined s26 text-purple-700">add</span></Button
 			>
 		</div>
 	</div>

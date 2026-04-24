@@ -168,11 +168,11 @@
 			}}
 			ondragover={(e) => dragOverHandler(e)}
 		>
-			<FolderOpen class="h-24 w-24 text-stone-500 lg:h-[150px] lg:w-[150px]"></FolderOpen>
-			<h3 class="text-center text-lg text-stone-500">Drag your PDF/DOCX/JPG File Here <br /> OR</h3>
+			<FolderOpen class="h-24 w-24 text-purple-500 lg:h-[150px] lg:w-[150px]"></FolderOpen>
+			<h3 class="text-center text-lg text-purple-500">Drag your PDF/DOCX/JPG File Here <br /> OR</h3>
 			<label
 				class=":ease-in-out flex items-center justify-center gap-2 rounded-full border
-			border-solid border-sky-700 bg-blue-500 bg-gradient-to-b from-sky-300 to-sky-600 px-5
+			border-solid border-purple-700 bg-purple-500 bg-gradient-to-b from-purple-300 to-purple-600 px-5
 			py-2 text-blue-50 shadow-lg duration-100 hover:cursor-pointer hover:hue-rotate-[-90deg] hover:transition-all
 			hover:duration-100 hover:ease-in-out active:scale-95 active:transform"
 				for="File_Drop"

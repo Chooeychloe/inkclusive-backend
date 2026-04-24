@@ -9,8 +9,8 @@
 		<span
 			class={cn(
 				'select-none material-symbols-outlined s26 z-10 rounded-full border-2 border-solid p-2 transition-all ease-in-out',
-				$progressStore === 0 && 'border-blue-500 bg-blue-100  text-blue-500',
-				$progressStore >= 50 && 'border-blue-500 bg-blue-500  text-blue-50'
+				$progressStore === 0 && 'border-purple-500 bg-purple-100  text-purple-500',
+				$progressStore >= 50 && 'border-purple-500 bg-purple-500  text-purple-50'
 			)}
 			>edit
 		</span>
@@ -18,8 +18,8 @@
 		<span
 			class={cn(
 				'select-none material-symbols-outlined s26 z-10 rounded-full border-2 border-solid p-2 transition-all ease-in-out border-stone-500 bg-stone-100  text-stone-500',
-				$progressStore === 50 && 'border-blue-500 bg-blue-100  text-blue-500',
-				$progressStore === 100 && 'border-blue-500 bg-blue-500  text-blue-50'
+				$progressStore === 50 && 'border-purple-500 bg-purple-100  text-purple-500',
+				$progressStore === 100 && 'border-purple-500 bg-purple-500  text-purple-50'
 			)}
 			>abc
 		</span>
@@ -27,15 +27,15 @@
 		<span
 			class={cn(
 				'select-none material-symbols-outlined s26 z-10 rounded-full border-2 border-solid p-2 transition-all ease-in-out border-stone-500 bg-stone-100 text-stone-500',
-				$progressStore === 100 && 'border-blue-500 bg-blue-100  text-blue-500',
-				$progressStore === 101 && 'border-blue-500 bg-blue-500  text-blue-50'
+				$progressStore === 100 && 'border-purple-500 bg-purple-100  text-purple-500',
+				$progressStore === 101 && 'border-purple-500 bg-purple-500  text-purple-50'
 			)}
 			>manage_search
 		</span>
 
 		<Progress value={$progressStore} class="absolute z-0 h-1 text-red-500"></Progress>
 	</div>
-	<div class=" flex w-full items-center justify-between px-1">
+	<div class=" flex w-full text-purple-900 items-center justify-between px-1">
 		<p>Write</p>
 		<p>Grammar</p>
 		<p>GFL</p>

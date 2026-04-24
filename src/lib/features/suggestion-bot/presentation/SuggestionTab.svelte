@@ -127,7 +127,7 @@
 		<div
 			class="step-5 flex h-14 w-full items-center justify-between border-b border-solid border-stone-300 bg-stone-50 p-5"
 		>
-			<h2 class="text-xl font-semibold">AI Companion</h2>
+			<h2 class="text-xl text-purple-900 font-semibold">AI Companion</h2>
 
 			<Tooltip.Provider>
 				<Tooltip.Root>
@@ -135,7 +135,7 @@
 						class={buttonVariants({ variant: 'outline' })}
 						onclick={() => (isSuggestionsTab = !isSuggestionsTab)}
 					>
-						<span class="material-symbols-outlined s26 text-stone-500">settings</span
+						<span class="material-symbols-outlined s26 text-purple-900">settings</span
 						></Tooltip.Trigger
 					>
 					<Tooltip.Content>

@@ -44,12 +44,12 @@
 
 	<Card.Root class="my-2">
 		<Card.Header>
-			<Card.Title class=" border-b border-dashed border-stone-500 pb-2 text-lg font-bold"
+			<Card.Title class=" border-b text-purple-700 border-dashed border-stone-500 pb-2 text-lg font-bold"
 				>Inkclusive's Total Scanned Files:</Card.Title
 			>
 		</Card.Header>
-		<Card.Content class="text-base text-blue-500">
-			<p class="text-center text-base font-bold text-green-500">
+		<Card.Content class="text-base text-purple-500">
+			<p class="text-center text-base font-bold text-purple-500">
 				{$countStore} Scanned Documents
 			</p>
 		</Card.Content>
@@ -57,11 +57,11 @@
 
 	<Card.Root class="my-2">
 		<Card.Header>
-			<Card.Title class=" border-b border-dashed border-stone-500 pb-2 text-lg font-bold"
+			<Card.Title class=" border-b text-purple-700 border-dashed border-stone-500 pb-2 text-lg font-bold"
 				>Useful Articles:</Card.Title
 			>
 		</Card.Header>
-		<Card.Content class="text-base text-blue-500">
+		<Card.Content class="text-base text-purple-500">
 			<ul class="list-outside list-disc px-3">
 				<li class="hover:underline">
 					<a
@@ -84,10 +84,10 @@
 	<Button
 		variant="outline"
 		onclick={backToTheStart}
-		class="my-2 flex w-full items-center justify-between border border-blue-500 bg-blue-50 p-6 text-base font-bold text-blue-500 hover:bg-blue-500 hover:text-blue-50"
+		class="my-2  flex w-full items-center border-purple-500 bg-blue-50 p-6 text-base font-bold text-purple-500 hover:bg-purple-500 hover:text-purple-50"
 		><p>Start All Over Again</p>
 
-		<span class="material-symbols-outlined s26"> restart_alt</span>
+		<span class="material-symbols-outlined s26">restart_alt</span>
 	</Button>
 	<ExportButton></ExportButton>
 </ScrollArea>

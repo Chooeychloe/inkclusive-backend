@@ -15,7 +15,7 @@
 
 <Card.Root class="mx-3 w-full ">
 	<Card.Header>
-		<Card.Title class="border-b border-dashed border-stone-500 pb-2 font-bold"
+		<Card.Title class="border-b border-dashed border-stone-500 text-purple-900 pb-2 font-bold"
 			>Step 1: Write</Card.Title
 		>
 		<Card.Description
@@ -24,7 +24,7 @@
 	</Card.Header>
 	<Card.Content>
 		<Button
-			class="step-6 flex  w-full items-center  justify-between border border-blue-500 bg-blue-50 p-3  text-base font-bold text-blue-500 hover:bg-blue-500 hover:text-blue-50"
+			class="step-6 flex  w-full items-center  justify-between border border-purple-500 bg-purple-50 p-3  text-base font-bold text-purple-500 hover:bg-purple-500 hover:text-purple-50"
 			disabled={$textContent.trim().split(/\s+/).length <= 25 || isLoading}
 			variant="outline"
 			color="secondary"
