@@ -11,7 +11,7 @@ import { getCount } from './countService';
 import { env } from '$env/dynamic/public';
 
 // const url = import.meta.env.VITE_BACKEND_URL || 'NOTHING';
-const url = env.PUBLIC_BACKEND_URL || 'NOTHING';
+const url = `${env.PUBLIC_BACKEND_URL?.replace(/\/+$/, '') ?? ''}/api/v1/`;
 
 console.log('Backend URL:', url);
 
@@ -27,6 +27,10 @@ export async function grammarCheckService(nextSlide: () => void) {
 			body: JSON.stringify({ prompt: get(textContent) })
 		});
 
+		if (!post.ok) {
+			const error = await post.json().catch(() => ({}));
+			throw new Error(error.detail || `Grammar check failed (${post.status}).`);
+		}
 		const data = await post.json();
 		console.log(data);
 		await revisedTextStore.set(data.revised_text as string);
@@ -70,7 +74,7 @@ export async function grammarCheckService(nextSlide: () => void) {
 			progressStore.set(50);
 		}
 	} catch (error) {
-		toast.error('Network Error');
+		toast.error(error instanceof Error ? error.message : 'The grammar service could not be reached.');
 		console.error('Error:', error);
 	}
 }
@@ -119,6 +123,10 @@ export async function glfCheckService(nextSlide: () => void) {
 			})
 		});
 
+		if (!post.ok) {
+			const error = await post.json().catch(() => ({}));
+			throw new Error(error.detail || `Gender-fair check failed (${post.status}).`);
+		}
 		const data = await post.json();
 		console.log('data', data);
 
@@ -163,7 +171,7 @@ export async function glfCheckService(nextSlide: () => void) {
 			nextSlide();
 		}
 	} catch (error) {
-		toast.error('Network Error');
+		toast.error(error instanceof Error ? error.message : 'The gender-fair service could not be reached.');
 		console.error('Error:', error);
 	}
 

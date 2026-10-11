@@ -17,6 +17,7 @@
 	import { getCount } from '../../services/countService';
 	import { countStore } from '$lib/stores/countStore';
 	import { ChevronDown, ChevronUp, Trash2 } from '@lucide/svelte';
+	const apiUrl = `${env.PUBLIC_BACKEND_URL?.replace(/\/+$/, '') ?? ''}/api/v1/`;
 
 	let isCompact = $state<boolean>(false);
 	let {
@@ -40,7 +41,7 @@
 		$waitStore = true;
 		if (bruh == 'grammar') {
 			try {
-				const post = await fetch(`${env.PUBLIC_BACKEND_URL ?? 'NOTHING'}grammar`, {
+				const post = await fetch(`${apiUrl}grammar`, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json'
@@ -48,6 +49,10 @@
 					body: JSON.stringify({ prompt: $textContent })
 				});
 
+				if (!post.ok) {
+					const error = await post.json().catch(() => ({}));
+					throw new Error(error.detail || `Grammar check failed (${post.status}).`);
+				}
 				const data = await post.json();
 				$revisedTextStore = await (data.revised_text as string);
 				console.log('FETCHING ' + $textContent);
@@ -88,7 +93,7 @@
 					progressStore.set(50);
 				}
 			} catch (error) {
-				toast.error('Network Error');
+				toast.error(error instanceof Error ? error.message : 'The grammar service could not be reached.');
 				console.error('Error:', error);
 			} finally {
 				isLoading = false;
@@ -123,7 +128,7 @@
 			};
 
 			try {
-				const post = await fetch(`${env.PUBLIC_BACKEND_URL ?? 'NOTHING'}gfl`, {
+				const post = await fetch(`${apiUrl}gfl`, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json'
@@ -131,6 +136,10 @@
 					body: JSON.stringify({ prompt: $textContent, pronoun_map: preferenceList() })
 				});
 
+				if (!post.ok) {
+					const error = await post.json().catch(() => ({}));
+					throw new Error(error.detail || `Gender-fair check failed (${post.status}).`);
+				}
 				const data = await post.json();
 
 				$revisedTextStore = await (data.revised_text as string);
@@ -170,7 +179,7 @@
 					$aiSuggestions = [];
 				}
 			} catch (error) {
-				toast.error('An Error Has Occured');
+				toast.error(error instanceof Error ? error.message : 'The gender-fair service could not be reached.');
 				console.error('Error:', error);
 			} finally {
 				isLoading = false;
@@ -206,11 +215,11 @@
 				<span class="font-bold text-red-500">Original:&nbsp;</span>
 				{suggestion.originalText}
 			</p>
-			{#if suggestion.rationale || suggestion.ruleId}
+			{#if (suggestion.rationale && suggestion.rationale !== suggestion.message) || suggestion.examples?.length || suggestion.correctionType === 'gfl'}
 				<div class="my-3 rounded-lg border border-border bg-muted/40 p-3 text-sm">
-					<p class="font-semibold text-foreground">Why this was suggested</p>
-					{#if suggestion.rationale}<p class="mt-1 leading-5 text-muted-foreground">{suggestion.rationale}</p>{/if}
-					{#if suggestion.category || suggestion.ruleId}<p class="mt-2 text-xs text-muted-foreground">{suggestion.category}{suggestion.category && suggestion.ruleId ? ' · ' : ''}{suggestion.ruleId}</p>{/if}
+					<p class="font-semibold text-foreground">Why this suggestion</p>
+					{#if suggestion.rationale && suggestion.rationale !== suggestion.message}<p class="mt-1 leading-5 text-muted-foreground">{suggestion.rationale}</p>{/if}
+					{#if suggestion.correctionType === 'gfl'}<p class="mt-2 text-xs font-medium text-muted-foreground">Gender-fair language</p>{/if}
 					{#if suggestion.examples?.length}<p class="mt-2 text-xs text-muted-foreground">Examples: {suggestion.examples.join(' · ')}</p>{/if}
 				</div>
 			{/if}
@@ -220,6 +229,7 @@
 			<div class="flex w-full flex-col gap-1">
 				{#each suggestion.replacements as item}
 					<button
+						aria-label={`Replace ${suggestion.originalText} with ${item}`}
 						disabled={$waitStore}
 						class={cn(
 							'group flex w-full items-center justify-center rounded-[9px] border border-solid p-[1px]',

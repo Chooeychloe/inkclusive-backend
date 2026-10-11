@@ -37,8 +37,7 @@
 			const index = (name: string) => header.indexOf(name);
 			const entries: TGenderTermProcessed[] = rows.map(row => ({ term: row[index('term')] || '', alternatives: (row[index('alternatives')] || '').split('|').join(', '), category: row[index('category')] || 'Other', guidance: row[index('guidance')] || '', examples: (row[index('examples')] || '').split('|').join('; ') })).filter(r => r.term.trim() && r.alternatives.trim());
 			if (!entries.length) throw new Error('No rows with a term and alternatives were found.');
-			await postBulkList(entries);
-			input.value = '';
+			if (await postBulkList(entries)) input.value = '';
 		} catch (error) { toast.error(error instanceof Error ? error.message : 'Could not import the CSV file.'); }
 		finally { busy = false; }
 	}

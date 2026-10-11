@@ -2,7 +2,7 @@ import { env } from '$env/dynamic/public';
 import { countStore } from '$lib/stores/countStore';
 
 // const url = import.meta.env.VITE_BACKEND_URL || 'NOTHING';
-const url = env.PUBLIC_BACKEND_URL || 'NOTHING';
+const url = `${env.PUBLIC_BACKEND_URL?.replace(/\/+$/, '') ?? ''}/api/v1/`;
 
 export async function getCount() {
 	try {

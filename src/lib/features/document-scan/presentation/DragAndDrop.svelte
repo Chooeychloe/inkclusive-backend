@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { CloudUpload, FolderOpen, LoaderCircle } from '@lucide/svelte';
+	import { Button } from '$lib/components/ui/button';
 	import { dragOverHandler } from '../use-case/dragAndDropEvents';
 	import { getSuffix } from '$lib/features/document-scan/use-case/utilts';
 	import { signalTextEditor } from '$lib/stores/signalStore';
@@ -9,7 +10,6 @@
 	} from '$lib/features/document-scan/use-case/extractDocument';
 	import ProseMirrorDocu from '$lib/features/document-scan/presentation/ProseMirrorDocu.svelte';
 
-	import { toast } from 'svelte-sonner';
 	import { textContent, textContentHTML, textTitle } from '$lib/stores/textFromEditorStore';
 	import { getTextFromPDF } from '$lib/features/document-scan/use-case/extractPDF';
 	import { ocrToText } from '$lib/features/document-scan/use-case/imgToText';
@@ -24,7 +24,8 @@
 		setFileNameDisplay,
 		fileDocument,
 		signal = false,
-		changeState
+		changeState,
+		cancelScan
 	}: {
 		setFileNameDisplay: (
 			name: string,
@@ -33,9 +34,14 @@
 		fileDocument: File | null;
 		signal: boolean;
 		changeState: (e: boolean) => void;
+		cancelScan: () => void;
 	} = $props();
 
 	let isLoading = $state(false);
+	let scanError = $state('');
+	let scanStatus = $state('');
+	let scanRequest = 0;
+	let scanController: AbortController | null = null;
 
 	$effect(() => {
 		if (signal == true) {
@@ -67,59 +73,57 @@
 	let extractedText = $state(false);
 
 	async function convertToText(file: File, type: string | undefined) {
-		if (!file) {
-			throw new Error('File must be a valid file');
-		}
+		if (!file) { scanError = 'Choose a file before starting a scan.'; return; }
+		const requestId = ++scanRequest;
+		scanController?.abort();
+		scanController = new AbortController();
+		const { signal: abortSignal } = scanController;
+		scanError = '';
+		scanStatus = type === 'pdf' ? 'Reading text from the PDF…' : type === 'docx' ? 'Reading the Word document…' : 'Recognizing text in the image…';
 
 		const formData = new FormData();
 		formData.append('file', file as File);
 		isLoading = true;
-		switch (type) {
-			case 'docx': {
-				console.log('Getting Docx');
-				const response = await fetch('/api/extract/docx', { method: 'POST', body: formData });
-				const result = await response.json();
-				if (result) {
-					extractedText = true;
-					$textContent = result.data;
-					$signalTextEditor = true;
+		try {
+			let text = '';
+			switch (type) {
+				case 'docx': {
+					const response = await fetch('/api/extract/docx', { method: 'POST', body: formData, signal: abortSignal });
+					const result = await response.json();
+					if (!response.ok) throw new Error(result.error || 'The Word document could not be read.');
+					text = typeof result.data === 'string' ? result.data : '';
+					break;
 				}
-
-				break;
+				case 'pdf': text = await getTextFromPDF(file, abortSignal); break;
+				case 'png':
+				case 'jpeg':
+				case 'jpg': text = await ocrToText(file, 'eng', abortSignal); break;
+				default: throw new Error('This file type is not supported. Choose a PDF, DOCX, JPG, or PNG file.');
 			}
-			case 'pdf': {
-				try {
-					const pdfText = await getTextFromPDF(file as File);
-					console.log('Getting PDF');
-					extractedText = true;
-					$textContent = pdfText;
-					$signalTextEditor = true;
-				} catch (e) {
-					console.log('Error:', e);
-					toast.error('Failed to get PDF');
-				}
-				break;
-			}
-			case 'png':
-			case 'jpeg':
-			case 'jpg': {
-				try {
-					console.log('Getting PNG');
-					const result = await ocrToText(file as File);
-					extractedText = true;
-					$textContent = result;
-					$signalTextEditor = true;
-				} catch (e) {
-					console.log('Error:', e);
-					toast.error('Failed to Scan Image');
-				}
-				break;
-			}
-			case undefined: {
-				throw new Error('Affix Undefined');
-			}
+			if (requestId !== scanRequest || abortSignal.aborted) return;
+			if (!text.trim()) throw new Error('No readable text was found. Try a clearer image or a document with selectable text.');
+			extractedText = true;
+			$textContent = text;
+			$signalTextEditor = true;
+			scanStatus = 'Text extracted. Review it in the editor before checking suggestions.';
+		} catch (error) {
+			if (requestId !== scanRequest || abortSignal.aborted) return;
+			scanError = error instanceof Error ? error.message : 'The file could not be scanned. Try another file.';
+			scanStatus = '';
+		} finally {
+			if (requestId === scanRequest) isLoading = false;
 		}
+	}
+
+	function stopScan() {
+		scanRequest += 1;
+		scanController?.abort();
+		scanController = null;
 		isLoading = false;
+		scanStatus = '';
+		scanError = '';
+		extractedText = false;
+		cancelScan();
 	}
 
 	const driverObj = driver({
@@ -144,15 +148,22 @@
 	});
 </script>
 
-<div class="flex w-full flex-1 items-start justify-center lg:items-center">
+<div class="flex w-full flex-1 flex-col items-center justify-center gap-4 p-4 lg:items-center">
+	{#if scanError}<p class="w-full max-w-xl rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive" role="alert">{scanError}</p>{/if}
+	{#if scanStatus && !isLoading}<p class="w-full max-w-xl text-sm text-muted-foreground" role="status" aria-live="polite">{scanStatus}</p>{/if}
 	{#if isLoading}
-		<LoaderCircle class="h-[50px] w-[50px] animate-spin self-center" color="#78716c" />
+		<section class="flex w-full max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-6 text-center shadow-sm" aria-labelledby="scan-progress-heading">
+			<LoaderCircle class="size-10 animate-spin text-primary" aria-hidden="true" />
+			<div><h3 id="scan-progress-heading" class="font-semibold">Scanning {fileName || 'your file'}</h3><p class="mt-1 text-sm text-muted-foreground" role="status" aria-live="polite">{scanStatus} Large documents can take a little longer.</p></div>
+			<Button type="button" variant="outline" onclick={stopScan}>Cancel scan</Button>
+		</section>
 	{:else if extractedText === false}
 		<form
-			class=" flex h-[350px] w-[250px] flex-col items-center justify-center
+			class=" flex h-[350px] w-[min(100%,450px)] flex-col items-center justify-center
 		gap-5 rounded-sm border-2 border-dashed border-border
 		bg-card p-5 lg:h-[450px] lg:w-[450px]"
 			ondrop={async (e) => {
+				e.preventDefault();
 				$textContent = '';
 				$textContentHTML = '';
 				$textTitle = 'Untitled_1';
@@ -161,48 +172,50 @@
 				$aiSuggestions = [];
 				$replaceStore = [];
 
-				e.preventDefault();
-				fileDocument = convertDragToFile(e);
-				setFileNameDisplay(fileName, fileSuffix);
-				await convertToText(fileDocument, fileSuffix);
+				try {
+					fileDocument = convertDragToFile(e);
+					setFileNameDisplay(fileName, fileSuffix);
+					await convertToText(fileDocument, fileSuffix);
+				} catch (error) {
+					scanError = error instanceof Error ? error.message : 'Choose a supported file to scan.';
+				}
 			}}
 			ondragover={(e) => dragOverHandler(e)}
 		>
 			<FolderOpen class="h-24 w-24 text-purple-500 lg:h-[150px] lg:w-[150px]"></FolderOpen>
 			<h3 class="text-center text-lg text-purple-500">Drag your PDF/DOCX/JPG File Here <br /> OR</h3>
 			<label
-				class=":ease-in-out flex items-center justify-center gap-2 rounded-full border
+				class="flex items-center justify-center gap-2 rounded-full border focus-within:outline-none focus-within:ring-2 focus-within:ring-ring
 			border-solid border-purple-700 bg-purple-500 bg-gradient-to-b from-purple-300 to-purple-600 px-5
 			py-2 text-blue-50 shadow-lg duration-100 hover:cursor-pointer hover:hue-rotate-[-90deg] hover:transition-all
 			hover:duration-100 hover:ease-in-out active:scale-95 active:transform"
-				for="File_Drop"
 				id="File_Label"
 			>
 				<CloudUpload class="h-8 w-8"></CloudUpload>
 				<span
 					class="bg-gradient-to-b from-sky-50 to-sky-200 bg-clip-text text-center text-lg font-semibold text-transparent"
-					>Select File
+					>Select file
 				</span>
+				<input
+					onchange={async (e) => {
+						$textContent = '';
+						$textContentHTML = '';
+						$textTitle = 'Untitled_1';
+						$progressStore = 0;
+						$GLFScore = 0;
+						$aiSuggestions = [];
+						$replaceStore = [];
+						fileDocument = convertInputToFile(e);
+						setFileNameDisplay(fileName, fileSuffix);
+						await convertToText(fileDocument, fileSuffix);
+					}}
+					id="File_Drop"
+					accept=".pdf,.docx,.png,.jpeg,.jpg"
+					type="file"
+					class="sr-only"
+					aria-label="Choose a PDF, Word document, or image to scan"
+				/>
 			</label>
-			<input
-				onchange={async (e) => {
-					$textContent = '';
-					$textContentHTML = '';
-					$textTitle = 'Untitled_1';
-					$progressStore = 0;
-					$GLFScore = 0;
-					$aiSuggestions = [];
-					$replaceStore = [];
-
-					fileDocument = convertInputToFile(e);
-					setFileNameDisplay(fileName, fileSuffix);
-					await convertToText(fileDocument, fileSuffix);
-				}}
-				id="File_Drop"
-				accept=".pdf,.docx,.png,.jpeg,.jpg"
-				type="file"
-				class="hidden"
-			/>
 		</form>
 	{:else}
 		<ProseMirrorDocu></ProseMirrorDocu>

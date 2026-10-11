@@ -42,8 +42,7 @@
 		if (!submittedEntries.length || isSaving) return;
 		isSaving = true;
 		try {
-			await postBulkList(submittedEntries);
-			closeDialog();
+			if (await postBulkList(submittedEntries)) closeDialog();
 		} finally {
 			isSaving = false;
 		}

@@ -37,26 +37,26 @@
 
             <nav class="flex flex-col gap-2 *:px-2">
                 <a
-                    href="/dashboard/editor"
+                    href="/write"
                     class={cn(
                         'flex items-center justify-start gap-3 rounded-xl border border-transparent p-2.5 text-lg font-medium transition-all ease-in-out',
                         'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                        $page.url.pathname === '/dashboard/editor' &&
+                        $page.url.pathname === '/write' &&
                             'border-purple-200 bg-purple-600 text-white shadow-lg shadow-purple-200 hover:bg-purple-700 hover:text-white'
                     )}
                 >
                     <span class="flex items-center justify-center rounded-lg bg-emerald-500 p-1.5 text-white shadow-sm">
                         <FilePenLine class="size-5" aria-hidden="true" />
                     </span>
-                    <span class="hidden lg:inline">Editor</span>
+                    <span class="hidden lg:inline">Write</span>
                 </a>
 
                 <a
-                    href="/dashboard/scan"
+                    href="/scan"
                     class={cn(
                         'flex items-center justify-start gap-3 rounded-xl border border-transparent p-2.5 text-lg font-medium transition-all ease-in-out',
                         'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                        $page.url.pathname === '/dashboard/scan' &&
+                        $page.url.pathname === '/scan' &&
                             'border-purple-200 bg-purple-600 text-white shadow-lg shadow-purple-200 hover:bg-purple-700 hover:text-white'
                     )}
                 >
@@ -67,11 +67,11 @@
                 </a>
 
                 <a
-                    href="/dashboard/history"
+                    href="/history"
                     class={cn(
                         'flex items-center justify-start gap-3 rounded-xl border border-transparent p-2.5 text-lg font-medium transition-all ease-in-out',
                         'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                        $page.url.pathname === '/dashboard/history' &&
+                        $page.url.pathname === '/history' &&
                             'border-purple-200 bg-purple-600 text-white shadow-lg shadow-purple-200 hover:bg-purple-700 hover:text-white'
                     )}
                 >

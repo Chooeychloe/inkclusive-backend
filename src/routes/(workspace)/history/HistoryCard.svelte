@@ -20,7 +20,7 @@
 			$textContent = history.text;
 			$textContentHTML = history.htmlAsText;
 			$textTitle = history.title;
-			goto('/dashboard/editor');
+			goto('/write');
 		}}
 	>
 		<Card.Header class="min-w-0 p-0">

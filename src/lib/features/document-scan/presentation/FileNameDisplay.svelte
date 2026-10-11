@@ -11,24 +11,26 @@
 			<span
 				class=" flex items-center justify-center rounded-[9px] border border-solid border-yellow-500 bg-gradient-to-t from-amber-700 to-yellow-300 p-[1px]"
 			>
-				<FileImage class="size-7 rounded-[8px] bg-gradient-to-t from-amber-700 to-yellow-500 p-1 text-yellow-50" aria-label="Image file" />
+				<FileImage class="size-7 rounded-[8px] bg-gradient-to-t from-amber-700 to-yellow-500 p-1 text-yellow-50" aria-hidden="true" />
 			</span>
 		{:else if fileType === 'docx'}
 			<span
 				class=" flex items-center justify-center rounded-[9px] border border-solid border-indigo-500 bg-gradient-to-t from-violet-700 to-indigo-300 p-[1px]"
 			>
-				<FileType class="size-7 rounded-[8px] bg-gradient-to-t from-violet-700 to-indigo-500 p-1 text-indigo-50" aria-label="Word document" />
+				<FileType class="size-7 rounded-[8px] bg-gradient-to-t from-violet-700 to-indigo-500 p-1 text-indigo-50" aria-hidden="true" />
 			</span>
 		{:else if fileType === 'pdf'}
 			<span
 				class=" flex items-center justify-center rounded-[9px] border border-solid border-pink-500 bg-gradient-to-t from-rose-700 to-pink-300 p-[1px]"
 			>
-				<FileText class="size-7 rounded-[8px] bg-gradient-to-t from-rose-700 to-pink-500 p-1 text-pink-50" aria-label="PDF file" />
+				<FileText class="size-7 rounded-[8px] bg-gradient-to-t from-rose-700 to-pink-500 p-1 text-pink-50" aria-hidden="true" />
 			</span>
 		{/if}
 
 		<p
-			class="w-20 overflow-hidden overflow-ellipsis whitespace-nowrap text-base font-bold xl:w-auto"
+			class="max-w-[45vw] overflow-hidden overflow-ellipsis whitespace-nowrap text-base font-bold xl:max-w-none"
+			aria-label="Selected file"
+			title={fileName}
 		>
 			{fileName}
 		</p>

@@ -20,7 +20,7 @@
 	import { GLFScore } from '$lib/stores/omegaLOL';
 	import { afterNavigate } from '$app/navigation';
 	import { ignoreGrammarStore } from '$lib/stores/ignoreStore';
-	import { HistoryManager } from '../../../../routes/dashboard/history/historyManager';
+	import { HistoryManager } from '../../../../routes/(workspace)/history/historyManager';
 	import { Settings } from '@lucide/svelte';
 
 	let api = $state<CarouselAPI>();

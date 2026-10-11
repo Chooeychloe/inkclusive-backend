@@ -19,6 +19,13 @@
 		$ignoreGrammarStore = [];
 		signal = e;
 	}
+	function cancelScan() {
+		fileDocument = null;
+		fileNameDisplay = { fileName: undefined, fileType: undefined };
+		$textContent = '';
+		$textContentHTML = '';
+		$textTitle = 'Untitled_1';
+	}
 	function setFileNameDisplay(
 		name: string,
 		type: 'jpg' | 'jpeg' | 'png' | 'docx' | 'pdf' | undefined
@@ -39,38 +46,37 @@
 			<FileNameDisplay {...fileNameDisplay} />
 			<div>
 				<label
-					class=" flex items-center justify-center gap-2 rounded-full border
+					class="flex items-center justify-center gap-2 rounded-full border focus-within:ring-2 focus-within:ring-ring
 			border-solid border-sky-700 bg-blue-500 bg-gradient-to-b from-sky-300 to-sky-600 px-3
 			py-1 text-blue-50 shadow-lg hover:cursor-pointer"
-					for="File_Drop2"
 					id="FileLabel"
 				>
 					<span
 						class="bg-gradient-to-b from-sky-50 to-sky-200 bg-clip-text text-center text-sm font-semibold text-transparent lg:text-base"
 						>Select Another File
 					</span>
+					<input
+						onchange={(e) => {
+							$textContent = '';
+							$textContentHTML = '';
+							$textTitle = 'Untitled_1';
+							$progressStore = 0;
+							$GLFScore = 0;
+							$aiSuggestions = [];
+							$replaceStore = [];
+							$ignoreGrammarStore = [];
+							fileDocument = convertInputToFile(e);
+							signal = true;
+						}}
+						id="File_Drop2"
+						accept=".pdf,.docx,.png,.jpeg,.jpg"
+						type="file"
+						class="sr-only"
+						aria-label="Select another PDF, Word document, or image"
+					/>
 				</label>
-
-				<input
-					onchange={(e) => {
-						$textContent = '';
-						$textContentHTML = '';
-						$textTitle = 'Untitled_1';
-						$progressStore = 0;
-						$GLFScore = 0;
-						$aiSuggestions = [];
-						$replaceStore = [];
-						$ignoreGrammarStore = [];
-						fileDocument = convertInputToFile(e);
-						signal = true;
-					}}
-					id="File_Drop2"
-					accept=".pdf,.docx,.png,.jpeg,.jpg"
-					type="file"
-					class="hidden"
-				/>
 			</div>
 		{/if}
 	</div>
-	<DragAndDrop {setFileNameDisplay} {fileDocument} {changeState} {signal}></DragAndDrop>
+	<DragAndDrop {setFileNameDisplay} {fileDocument} {changeState} {cancelScan} {signal}></DragAndDrop>
 </div>

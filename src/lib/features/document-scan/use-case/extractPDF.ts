@@ -55,7 +55,7 @@ const getPageText = async (pdf: PDFJS.PDFDocument, pageNo: number) => {
 	return filterTokenizedText(tokenizedText.items);
 };
 
-export async function getTextFromPDF(file: File | null) {
+export async function getTextFromPDF(file: File | null, signal?: AbortSignal) {
 	if (!file) {
 		throw new Error('File not found');
 	}
@@ -66,22 +66,32 @@ export async function getTextFromPDF(file: File | null) {
 
 	const getPDFText = async (source: ArrayBuffer): Promise<string> => {
 		// Use configuration options when loading document
-		const pdf = await PDFJS.getDocument({
+		const loadingTask = PDFJS.getDocument({
 			data: new Uint8Array(source),
 			disableTextLayer: true, // Use configuration option here
 			isEvalSupported: false,
 			useSystemFonts: true
-		}).promise;
-
-		const maxPages = pdf.numPages;
-		const pageTextPromises = [];
-		for (let pageNo = 1; pageNo <= maxPages; pageNo += 1) {
-			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-			// @ts-expect-error
-			pageTextPromises.push(getPageText(pdf, pageNo));
+		});
+		const destroyTask = () => { void loadingTask.destroy(); };
+		signal?.addEventListener('abort', destroyTask, { once: true });
+		try {
+			if (signal?.aborted) throw new DOMException('Scan cancelled', 'AbortError');
+			const pdf = await loadingTask.promise;
+			const maxPages = pdf.numPages;
+			const pageTextPromises = [];
+			for (let pageNo = 1; pageNo <= maxPages; pageNo += 1) {
+				if (signal?.aborted) throw new DOMException('Scan cancelled', 'AbortError');
+				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+				// @ts-expect-error
+				pageTextPromises.push(getPageText(pdf, pageNo));
+			}
+			const pageTexts = await Promise.all(pageTextPromises);
+			if (signal?.aborted) throw new DOMException('Scan cancelled', 'AbortError');
+			return pageTexts.join(' ');
+		} finally {
+			signal?.removeEventListener('abort', destroyTask);
+			if (signal?.aborted) await loadingTask.destroy();
 		}
-		const pageTexts = await Promise.all(pageTextPromises);
-		return pageTexts.join(' ');
 	};
 
 	try {

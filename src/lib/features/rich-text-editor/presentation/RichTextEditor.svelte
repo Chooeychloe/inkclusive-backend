@@ -31,10 +31,32 @@
 	import { driver } from 'driver.js';
 
 	import { tourStore } from '$lib/stores/tourStore';
+	import { readLocalDraft, writeLocalDraft } from '../services/localDraft';
 
 	let editorContainer: HTMLDivElement | null = $state(null);
 	let view: EditorView | null = $state(null);
 	let linterPlugin = createLinterPlugin([]);
+	let draftStatus = $state('');
+	let draftReady = $state(false);
+	let draftTimer: ReturnType<typeof setTimeout> | undefined;
+
+	$effect(() => {
+		const draft = { text: $textContent, html: $textContentHTML, title: $textTitle };
+		if (!draftReady) return;
+		draftStatus = 'Saving draft…';
+		if (draftTimer) clearTimeout(draftTimer);
+		draftTimer = setTimeout(() => {
+			draftStatus = writeLocalDraft(draft) ? 'Draft saved on this device' : 'Draft could not be saved in this browser';
+		}, 600);
+		return () => { if (draftTimer) clearTimeout(draftTimer); };
+	});
+
+	$effect(() => {
+		const readOnly = $progressStore > 0;
+		if (!view) return;
+		view.setProps({ editable: () => !readOnly });
+		view.dom.setAttribute('aria-readonly', String(readOnly));
+	});
 
 	function resetScroll(event: Event) {
 		const target = event.target as HTMLDivElement;
@@ -181,6 +203,16 @@
 	});
 
 	onMount(() => {
+		if (!$textContent.trim()) {
+			const draft = readLocalDraft();
+			if (draft?.text.trim()) {
+				$textContent = draft.text;
+				$textContentHTML = draft.html;
+				$textTitle = draft.title;
+				draftStatus = 'Recovered your last draft from this device';
+			}
+		}
+		draftReady = true;
 		const state = EditorState.create({
 			schema: mySchema,
 			doc: DOMParser.fromSchema(mySchema).parse(
@@ -200,6 +232,13 @@
 
 		view = new EditorView(editorContainer, {
 			state,
+			attributes: {
+				role: 'textbox',
+				'aria-label': 'Document editor',
+				'aria-multiline': 'true',
+				'aria-describedby': 'draft-status',
+				'aria-readonly': String($progressStore > 0)
+			},
 			dispatchTransaction(transaction) {
 				const newState = view!.state.apply(transaction);
 				view!.updateState(newState);
@@ -214,6 +253,8 @@
 		reconfigureAllPlugins();
 
 		return () => {
+			if (draftTimer) clearTimeout(draftTimer);
+			writeLocalDraft({ text: $textContent, html: $textContentHTML, title: $textTitle });
 			view?.destroy();
 		};
 	});
@@ -224,20 +265,28 @@
 	<div
 		class="step-3 flex min-h-14 w-full shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-border bg-card px-3 py-2 sm:px-4 lg:flex-nowrap"
 	>
+		<label class="sr-only" for="document-title">Document title</label>
 		<input
+			id="document-title"
 			type="text"
 			class="order-1 w-28 min-w-0 shrink-0 text-ellipsis whitespace-nowrap bg-card px-1 text-base font-semibold focus:outline-none sm:w-40 sm:text-lg"
 			bind:value={$textTitle}
+			aria-label="Document title"
 			onblur={resetScroll}
 		/>
 		<div class="order-2 ml-auto shrink-0 pl-1 lg:order-3 lg:ml-0">
-			<p class="whitespace-nowrap text-xs text-muted-foreground lg:text-sm">
+			<p class="whitespace-nowrap text-xs text-muted-foreground lg:text-sm" aria-label="Word count">
 				Count: {$textContent == '' ? 0 : $textContent.trim().split(/\s+/).length}
 			</p>
 		</div>
+		<p id="draft-status" class="order-4 basis-full text-xs text-muted-foreground lg:order-4 lg:basis-auto" role="status" aria-live="polite">
+			{draftStatus || 'Drafts are stored only on this device.'}
+		</p>
 		{#if view !== null}
 			<div class="order-3 basis-full lg:order-2 lg:basis-auto lg:flex-1">
-				<ToolBar {view} {mySchema}></ToolBar>
+				<fieldset disabled={$progressStore > 0} class="min-w-0 border-0 p-0">
+					<ToolBar {view} {mySchema}></ToolBar>
+				</fieldset>
 			</div>
 		{/if}
 	</div>
@@ -245,7 +294,7 @@
 	<!-- ProseMirror editor container -->
 
 	<ScrollArea
-		class="step-2 min-h-0 max-h-[400px] w-full flex-1 shadow-inner lg:max-h-[600px] xl:max-h-[800px]"
+		class="step-2 min-h-0 max-h-[400px] w-full flex-1 shadow-inner focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary lg:max-h-[600px] xl:max-h-[800px]"
 		onclick={() => {
 			if ($progressStore > 0) {
 				toast.info('You can only edit text during the Write Step');
@@ -256,7 +305,7 @@
 			<div
 				bind:this={editorContainer}
 				class={cn(
-					'editor__paragraph prose prose-sm w-full flex-1 text-foreground lg:prose-base xl:prose-lg',
+					'editor__paragraph prose prose-sm w-full flex-1 text-foreground focus:outline-none lg:prose-base xl:prose-lg',
 					$progressStore > 0 && 'pointer-events-none'
 				)}
 				id="editor"

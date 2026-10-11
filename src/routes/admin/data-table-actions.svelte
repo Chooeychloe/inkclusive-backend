@@ -111,6 +111,7 @@
 				onclick={async () => {
 					isSaving = true;
 					try { await putList(term.term, optionsResponse, categoryResponse, guidanceResponse, examplesResponse); handleEditDialogClose(); }
+					catch { /* The API service displays the error. */ }
 					finally { isSaving = false; }
 				}}><Save class="mr-2 size-4" />{isSaving ? 'Saving…' : 'Save changes'}</Button
 			>

@@ -50,7 +50,6 @@
 	let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 10 });
 	let columnFilters = $state<ColumnFiltersState>([]);
 	let rowSelection = $state<RowSelectionState>({});
-	const deletedRowSelection = $state<string[]>([]);
 
 	// Add loading state
 	let isLoading = $state(true);
@@ -444,10 +443,8 @@
 								const selectedRowsData = table
 									.getSelectedRowModel()
 									.rows.map((row) => row.original);
-								selectedRowsData.forEach((data) => {
-									deletedRowSelection.push(data.term);
-								});
-								bulkDeleteListItem(deletedRowSelection);
+								const selectedTerms = selectedRowsData.map((data) => data.term);
+								bulkDeleteListItem(selectedTerms);
 								table.resetRowSelection(true);
 								deleteDialogOpen = false;
 							}}><Trash2 class="mr-2 size-4" />Delete selected</Button

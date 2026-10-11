@@ -2,17 +2,18 @@
 	import * as Dialog from '$lib/components/ui/dialog';
 	
 	const commands = [
-		{ key: 'Ctrl + S', desc: 'Scan current document' },
-		{ key: 'Ctrl + E', desc: 'Open Editor' },
-		{ key: 'Ctrl + H', desc: 'View History' },
-		{ key: 'Ctrl + K', desc: 'Open Command Palette' }
+		{ key: 'Ctrl / Cmd + B', desc: 'Toggle bold' },
+		{ key: 'Ctrl / Cmd + I', desc: 'Toggle italic' },
+		{ key: 'Ctrl / Cmd + Z', desc: 'Undo' },
+		{ key: 'Ctrl / Cmd + Y or Shift + Z', desc: 'Redo' },
+		{ key: 'Ctrl / Cmd + Shift + 8', desc: 'Start a bulleted list' }
 	];
 </script>
 
 <Dialog.Content class="sm:max-w-[425px]">
 	<Dialog.Header>
 		<Dialog.Title>Keyboard Commands</Dialog.Title>
-		<Dialog.Description>Quickly navigate Inkclusive using these shortcuts.</Dialog.Description>
+		<Dialog.Description>Use these editor shortcuts. On macOS, use Command where Ctrl is shown. You can also reach toolbar controls with Tab and activate them with Enter or Space.</Dialog.Description>
 	</Dialog.Header>
 	<div class="grid gap-4 py-4">
 		{#each commands as cmd}

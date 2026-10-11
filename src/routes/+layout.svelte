@@ -11,7 +11,7 @@
 	import { page } from '$app/state';
 	import { ModeWatcher } from 'mode-watcher';
 	beforeNavigate(({ cancel }) => {
-		if (page.url.pathname == '/dashboard/editor' || page.url.pathname == '/dashboard/scan') {
+		if (['/write', '/scan', '/dashboard/editor', '/dashboard/scan'].includes(page.url.pathname)) {
 			if ($textContent == '') return;
 			const confirmed = confirm('Are you sure you want to leave this page?');
 			if (!confirmed) {

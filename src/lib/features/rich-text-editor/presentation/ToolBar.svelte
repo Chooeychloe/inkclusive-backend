@@ -234,11 +234,10 @@
 
 <div class="w-full border-b border-border bg-card">
 	<div class="flex items-center justify-between border-b border-border/70 bg-background/60 px-2">
-		<div class="flex items-center gap-1" role="tablist" aria-label="Editor ribbon">
+		<div class="flex items-center gap-1" role="group" aria-label="Editor ribbon tabs">
 			<button
 				type="button"
-				role="tab"
-				aria-selected={activeTab === 'Home'}
+				aria-pressed={activeTab === 'Home'}
 				class="border-b-2 px-3 py-2 text-sm font-medium transition-colors {activeTab === 'Home'
 					? 'border-primary text-primary'
 					: 'border-transparent text-muted-foreground hover:text-foreground'}"
@@ -246,8 +245,7 @@
 			>
 			<button
 				type="button"
-				role="tab"
-				aria-selected={activeTab === 'Paragraph'}
+				aria-pressed={activeTab === 'Paragraph'}
 				class="border-b-2 px-3 py-2 text-sm font-medium transition-colors {activeTab === 'Paragraph'
 					? 'border-primary text-primary'
 					: 'border-transparent text-muted-foreground hover:text-foreground'}"
@@ -261,7 +259,7 @@
 	</div>
 
 	{#if activeTab === 'Home'}
-		<div class="flex min-h-[88px] flex-wrap items-stretch gap-x-1 px-2 py-2" role="tabpanel" aria-label="Home">
+		<div class="flex min-h-[88px] flex-wrap items-stretch gap-x-1 px-2 py-2" role="group" aria-label="Home formatting tools">
 			<div class="flex min-w-0 flex-col justify-between border-r border-border px-2 pb-1 pr-3">
 				<div class="flex flex-wrap items-center gap-1">
 					<DropdownMenu.Root>
@@ -318,7 +316,7 @@
 			</div>
 		</div>
 	{:else}
-		<div class="flex min-h-[88px] flex-wrap items-stretch gap-x-1 px-2 py-2" role="tabpanel" aria-label="Paragraph">
+		<div class="flex min-h-[88px] flex-wrap items-stretch gap-x-1 px-2 py-2" role="group" aria-label="Paragraph formatting tools">
 			<div class="flex flex-col justify-between border-r border-border px-3 pb-1">
 				<div class="flex items-center gap-1">
 					<Button size="icon" class="h-8 w-8" variant={activeAlignment === 'left' ? 'secondary' : 'ghost'} aria-pressed={activeAlignment === 'left'} aria-label="Align left" title="Align left" onclick={() => setTextAlign('left')}><AlignLeft /></Button>

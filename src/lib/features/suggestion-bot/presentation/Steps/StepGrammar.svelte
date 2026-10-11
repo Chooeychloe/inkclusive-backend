@@ -69,9 +69,9 @@
 	<Card.Root class=" w-full">
 		<Card.Header>
 			<Card.Title class="border-b border-dashed border-stone-500 pb-2 font-bold"
-				>Step 2: Grammar Check</Card.Title
+				>Step 2: Review grammar suggestions</Card.Title
 			>
-			<Card.Description>Here is the list of grammar corrections that I can suggest</Card.Description
+			<Card.Description>Review each suggestion and choose which changes to apply.</Card.Description
 			>
 		</Card.Header>
 		<Card.Content class="flex flex-col gap-2">

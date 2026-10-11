@@ -5,7 +5,7 @@
 	import { EditorView } from 'prosemirror-view';
 	import { DOMParser, DOMSerializer } from 'prosemirror-model';
 	import { cn } from '$lib/utils';
-	import { textContent, textContentHTML } from '$lib/stores/textFromEditorStore';
+	import { textContent, textContentHTML, textTitle } from '$lib/stores/textFromEditorStore';
 	import mySchema from '$lib/features/rich-text-editor/entities/Schema';
 	import { progressStore } from '$lib/stores/progressStore';
 	import createLinterPlugin from '$lib/features/rich-text-editor/use-case/LinterPlugin';
@@ -23,10 +23,31 @@
 	import { buildInputRules } from '../use-case/inputRules';
 	import { signalTextEditor } from '$lib/stores/signalStore';
 	import { cleanPastePlugin } from '$lib/features/rich-text-editor/use-case/cleanPastePlugin';
+	import { writeLocalDraft } from '$lib/features/rich-text-editor/services/localDraft';
 
 	let editorContainer: HTMLDivElement | null = $state(null);
 	let view: EditorView | null = $state(null);
 	let linterPlugin = createLinterPlugin([]);
+	let draftStatus = $state('');
+	let draftTimer: ReturnType<typeof setTimeout> | undefined;
+
+	$effect(() => {
+		const draft = { text: $textContent, html: $textContentHTML, title: $textTitle || 'Scanned document' };
+		if (!draft.text.trim()) return;
+		draftStatus = 'Saving local draft…';
+		if (draftTimer) clearTimeout(draftTimer);
+		draftTimer = setTimeout(() => {
+			draftStatus = writeLocalDraft(draft) ? 'Saved on this device' : 'Could not save in this browser';
+		}, 600);
+		return () => { if (draftTimer) clearTimeout(draftTimer); };
+	});
+
+	$effect(() => {
+		const readOnly = $progressStore > 0;
+		if (!view) return;
+		view.setProps({ editable: () => !readOnly });
+		view.dom.setAttribute('aria-readonly', String(readOnly));
+	});
 
 	// this shit was the problem
 
@@ -110,6 +131,7 @@
 
 		view = new EditorView(editorContainer, {
 			state,
+			attributes: { role: 'textbox', 'aria-label': 'Scanned document editor', 'aria-multiline': 'true', 'aria-readonly': String($progressStore > 0) },
 			dispatchTransaction(transaction) {
 				const newState = view!.state.apply(transaction);
 				view!.updateState(newState);
@@ -125,14 +147,17 @@
 		reconfigureAllPlugins();
 
 		return () => {
+			if (draftTimer) clearTimeout(draftTimer);
+			if ($textContent.trim()) writeLocalDraft({ text: $textContent, html: $textContentHTML, title: $textTitle });
 			view?.destroy();
 		};
 	});
 </script>
 
 <div class="flex flex-1 flex-col items-center bg-card xl:h-full">
+	<p class="sr-only" role="status" aria-live="polite">{draftStatus}</p>
 	<ScrollArea
-		class="max-h-[400px] w-full flex-1 shadow-inner lg:max-h-[600px] xl:max-h-[800px]"
+		class="max-h-[400px] w-full flex-1 shadow-inner focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary lg:max-h-[600px] xl:max-h-[800px]"
 		onclick={() => {
 			if ($progressStore > 0) {
 				toast.info('You can only edit text during the Write Step');
@@ -143,7 +168,7 @@
 			<div
 				bind:this={editorContainer}
 				class={cn(
-					'editor__paragraph prose prose-sm w-full flex-1 text-foreground lg:prose-base xl:prose-lg',
+					'editor__paragraph prose prose-sm w-full flex-1 text-foreground focus:outline-none lg:prose-base xl:prose-lg',
 					$progressStore > 0 && 'pointer-events-none'
 				)}
 				id="editor"

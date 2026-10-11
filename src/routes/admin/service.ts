@@ -4,146 +4,105 @@ import type { TGenderTermProcessed } from './column';
 import { toast } from 'svelte-sonner';
 import { env } from '$env/dynamic/public';
 
-// const url = import.meta.env.VITE_BACKEND_URL || 'NOTHING';
-const url = env.PUBLIC_BACKEND_URL || 'NOTHING';
+export type TermRecord = { term: string; options: string[]; category: string; guidance: string; examples: string[] };
 
-type TermsResponse = { [key: string]: string[] };
-export type TermRecord = { term: string; options: string[]; category?: string; guidance?: string; examples?: string[] };
+const baseUrl = env.PUBLIC_BACKEND_URL?.replace(/\/+$/, '');
+function endpoint(path: string) {
+	if (!baseUrl) throw new Error('PUBLIC_BACKEND_URL is not configured.');
+	return `${baseUrl}/api/v1/${path}`;
+}
+
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+	let response: Response;
+	try {
+		const headers = new Headers(init.headers);
+		if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+		response = await fetch(endpoint(path), {
+			...init,
+			headers
+		});
+	} catch (error) {
+		throw new Error(error instanceof Error ? error.message : 'The API could not be reached.');
+	}
+
+	if (!response.ok) {
+		let message = `Request failed (${response.status}).`;
+		try {
+			const body = await response.json();
+			message = typeof body.detail === 'string' ? body.detail : message;
+		} catch { /* Keep the HTTP status message when the response is not JSON. */ }
+		throw new Error(message);
+	}
+	if (response.status === 204) return undefined as T;
+	return await response.json() as T;
+}
+
+function toPayload(request: TGenderTermProcessed) {
+	return {
+		term: request.term.trim(),
+		options: request.alternatives.split(',').map((value) => value.trim()).filter(Boolean),
+		category: request.category || 'Other',
+		guidance: request.guidance || '',
+		examples: (request.examples || '').split(';').map((value) => value.trim()).filter(Boolean)
+	};
+}
 
 export async function getTermRecords(): Promise<TermRecord[]> {
-	const response = await fetch(url + 'terms/records', { headers: { 'Content-Type': 'application/json' } });
-	if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-	return await response.json() as TermRecord[];
+	return request<TermRecord[]>('terms');
 }
 
-function toPayload(request: TGenderTermProcessed): TermRecord {
-	return { term: request.term.trim(), options: request.alternatives.split(',').map(x => x.trim()).filter(Boolean), category: request.category || 'Other', guidance: request.guidance || '', examples: (request.examples || '').split(';').map(x => x.trim()).filter(Boolean) };
-}
-
-export async function getList(): Promise<TermsResponse> {
-	console.log(url);
+export async function postBulkList(entries: TGenderTermProcessed[]): Promise<boolean> {
 	try {
-		const response = await fetch(url + 'terms', {
-			method: 'GET',
-			headers: {
-				'ngrok-skip-browser-warning': 'true',
-				'Content-Type': 'application/json'
-			}
-		});
-
-		if (!response.ok) {
-			const errorText = await response.text();
-			throw new Error(`HTTP ${response.status}: ${errorText}`);
-		}
-
-		const contentType = response.headers.get('content-type');
-		if (!contentType || !contentType.includes('application/json')) {
-			const text = await response.text();
-			console.log(text);
-			throw new Error(`Expected JSON, got: ${contentType}. Response: ${text}`);
-		}
-
-		return (await response.json()) as TermsResponse;
+		await request('terms/bulk', { method: 'POST', body: JSON.stringify({ terms: entries.map(toPayload) }) });
+		toast.success(`${entries.length} ${entries.length === 1 ? 'term' : 'terms'} added`);
+		refreshStore.set(get(refreshStore) + 1);
+		return true;
 	} catch (error) {
-		if (error instanceof SyntaxError) {
-			console.error('Invalid JSON response');
-		}
+		toast.error(error instanceof Error ? error.message : 'Could not add terms.');
+		return false;
+	}
+}
+
+export async function putList(term: string, alternatives: string, category = 'Other', guidance = '', examples = ''): Promise<TermRecord> {
+	try {
+	const updated = await request<TermRecord>(`terms/${encodeURIComponent(term)}`, {
+		method: 'PATCH',
+		body: JSON.stringify({
+			options: alternatives.split(',').map((value) => value.trim()).filter(Boolean),
+			category,
+			guidance,
+			examples: examples.split(';').map((value) => value.trim()).filter(Boolean)
+		})
+	});
+	toast.success('Term updated');
+	refreshStore.set(get(refreshStore) + 1);
+	return updated;
+	} catch (error) {
+		toast.error(error instanceof Error ? error.message : 'Could not update the term.');
 		throw error;
 	}
 }
 
-async function postList(request: TGenderTermProcessed) {
-	const response = await fetch(url + 'terms', {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify(toPayload(request))
-	});
-
-	if (!response.ok) {
-		toast.error('Error Occured Please Check Logs');
-		throw new Error(`HTTP error! status: ${response.status}`);
-	}
-	return response.json() as Promise<TermsResponse>;
-}
-export async function postBulkList(request: TGenderTermProcessed[]) {
+export async function deleteListItem(term: string): Promise<void> {
 	try {
-		const response = await fetch(url + 'terms/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ terms: request.map(toPayload) }) });
-		if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-		console.log('Bulk submission completed:', request.length);
-
-		toast.success('Submission Added');
+		await request<void>(`terms/${encodeURIComponent(term)}`, { method: 'DELETE' });
+		toast.success('Term deleted');
 		refreshStore.set(get(refreshStore) + 1);
 	} catch (error) {
-		console.error('Error in bulk submission:', error);
-		toast.error('Error occurred during bulk submission. Please check logs.');
+		toast.error(error instanceof Error ? error.message : 'Could not delete the term.');
 	}
 }
 
-export async function putList(term: string, options: string, category = 'Other', guidance = '', examples = ''): Promise<TermsResponse> {
-	const sanitizedOptions = options.split(',');
-	const response = await fetch(url + 'terms/' + term, {
-		method: 'PUT',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify({ options: sanitizedOptions.map(x => x.trim()).filter(Boolean), category, guidance, examples: examples.split(';').map(x => x.trim()).filter(Boolean) })
-	});
-	if (!response.ok) {
-		toast.error('Error Occured Please Check Logs');
-		throw new Error(`HTTP error! status: ${response.status}`);
-	} else {
-		toast.success('Success');
-		refreshStore.set(get(refreshStore) + 1);
-	}
-	console.log(sanitizedOptions);
-
-	return response.json() as Promise<TermsResponse>;
-}
-
-export async function deleteListItem(term: string) {
-	const response = await fetch(url + 'terms/' + term, {
-		method: 'DELETE',
-		headers: {
-			'Content-Type': 'application/json'
-		}
-	});
-	if (!response.ok) {
-		toast.error('Error Occured Please Check Logs');
-		throw new Error(`HTTP error! status: ${response.status}`);
-	} else {
-		toast.success('Success');
-		refreshStore.set(get(refreshStore) + 1);
-	}
-}
-
-// ignore me
-async function bulkDelete(term: string) {
-	const response = await fetch(url + 'terms/' + term, {
-		method: 'DELETE',
-		headers: {
-			'Content-Type': 'application/json'
-		}
-	});
-	if (!response.ok) {
-		toast.error('Error Occured Please Check Logs');
-		throw new Error(`HTTP error! status: ${response.status}`);
-	} else {
-		toast.success('Success');
-		refreshStore.set(get(refreshStore) + 1);
-	}
-}
-
-export async function bulkDeleteListItem(terms: string[]) {
+export async function bulkDeleteListItem(terms: string[]): Promise<void> {
 	try {
-		const results = await Promise.all(terms.map(bulkDelete));
-		console.log('✅ Bulk submission results:', results);
-
-		toast.success('✅ Submission Added');
+		const result = await request<{ deleted: number }>('terms', {
+			method: 'DELETE',
+			body: JSON.stringify({ terms })
+		});
+		toast.success(`${result.deleted} ${result.deleted === 1 ? 'term' : 'terms'} deleted`);
 		refreshStore.set(get(refreshStore) + 1);
 	} catch (error) {
-		console.error('Error in bulk submission:', error);
-		toast.error('Error occurred during bulk submission. Please check logs.');
+		toast.error(error instanceof Error ? error.message : 'Could not delete terms.');
+		throw error;
 	}
 }
