@@ -1,81 +1,46 @@
-# FairWrite (Client-Side)
+# Inkclusive web client
 
-FairWrite a modern web-based text editor that supports grammar correction and gender-fair language rewriting. The client side built with **SvelteKit** and a carefully curated frontend tech stack, FairWrite offers a clean, responsive, and intuitive editing experience.
+The client is a SvelteKit and TypeScript application. It provides the ProseMirror writing editor, grammar and gender-fair suggestions, document scanning, export, browser history, and the term-library admin interface.
 
----
+## Main areas
 
-## ✨ Features
+- `/dashboard/editor` - write and revise text, review suggestions, and apply or ignore them.
+- `/dashboard/scan` - upload PDF, DOCX, JPEG, or PNG documents for text extraction.
+- `/dashboard/history` - view and clear writing sessions saved in browser IndexedDB.
+- `/admin` - search and manage the gender-fair term library.
+- `/api/extract/*` and `/api/docx` - SvelteKit server endpoints used for document import/export.
+- `/api/verify` - checks the admin password configured on the SvelteKit server.
 
-- **Grammar Suggestions** – Instantly see grammar feedback from the backend as you type.
-- **Gender-Fair Language Corrections** – View and apply inclusive alternatives for biased terms.
-- **PDF Parsing and Annotation** – Upload PDFs and extract editable content using OCR and PDF.js.
-- **ProseMirror-Based Editor** – A rich text editor with structured formatting and plugin support.
-- **Custom preferred pronouns** -system can apply respectful and inclusive language tailored to you.
-- **Admin Dashboard** – UI for managing gender term rules.
+The editor calls the separate FastAPI service for grammar and gender-fair suggestions. The admin term actions call the backend's `/terms` endpoints. **The admin password prompt only protects the UI. The backend term endpoints are currently unauthenticated, so add backend authorization before exposing term editing publicly.**
 
----
+## Setup
 
-## 🛠️ Tech Stack
+Use Node.js 20 or newer. Copy `.env.example` to `.env`, then set `PUBLIC_BACKEND_URL` to the backend base URL, including its trailing slash. Choose a private `ADMIN_PASSWORD` for the client-side admin prompt.
 
-| Technology       | Purpose                                        |
-| ---------------- | ---------------------------------------------- |
-| **SvelteKit**    | Application framework and routing              |
-| **Tailwind CSS** | Utility-first styling for responsive UI        |
-| **TypeScript**   | Type safety and DX improvements                |
-| **Zod**          | Schema validation for forms and frontend logic |
-| **ProseMirror**  | WYSIWYG editor with custom plugin extensions   |
-| **Chad Svelte**  | Prebuilt Svelte UI components                  |
-| **PDF.js**       | PDF rendering and manipulation                 |
-| **Tesseract.js** | OCR for scanned documents or image-based PDFs  |
-| **Quasar JS**    | Additional UI component usage                  |
-| **Elephant.js**  | Feedback animations and micro-interactions     |
-
----
-
-## 📦 Installation
-
-### 0. Prerequisite: Install Node.js
-
-Make sure you have [Node.js](https://nodejs.org/) (version 18 or higher recommended) installed on your system.
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/yourusername/fairwrite-client.git](https://github.com/Fair-Write/Client-Side.git
-cd fairwrite-client
-```
-
-### 2. Install Dependencies
-
-```bash
-npm install
-# or
-pnpm install
-```
-
-### 3. Run the Development Server
-
-```bash
+```sh
+npm ci
 npm run dev
 ```
 
----
+The dev server normally runs at `http://localhost:5173`. For local backend setup, see the [backend README](../inkclusive-backend/README.md).
 
-## 🌐 API Integration
+## Commands
 
-This client connects to the FairWrite Backend via REST API for grammar and gender-fair language processing.
-
-You can configure the backend base URL using a `.env` file.
-
-**Example `.env` file:**
-
-```env
-PUBLIC_BACKEND_URL=http://localhost:80
-ADMIN_PASSWORD=ILOVEGFL
+```sh
+npm run check       # Svelte and TypeScript diagnostics
+npm run build       # production build
+npm run preview     # serve the production build locally
+npm test            # Vitest unit tests
+npm run lint        # ESLint and Prettier checks
 ```
 
----
+The app uses Tailwind CSS 4 through its Vite plugin, SvelteKit's Netlify adapter, ProseMirror, TanStack Table, Zod, PDF.js, Tesseract.js, Mammoth, and jsPDF. Tailwind's project setup is in `vite.config.ts`, `src/app.css`, and `tailwind.config.ts`, following the [Tailwind SvelteKit guide](https://tailwindcss.com/docs/installation/framework-guides/sveltekit).
 
-## Backend Repository
+## Configuration
 
-- [FairWrite/Server-Side](https://github.com/Fair-Write/Server-Side.git): The official backend for FairWrite, providing data via REST API for grammar and gender-fair language processing.
+| Variable | Purpose |
+| --- | --- |
+| `PUBLIC_BACKEND_URL` | Base URL of the FastAPI server; keep the trailing slash. This is public because the browser calls the API directly. |
+| `ADMIN_PASSWORD` | Password compared by the SvelteKit `/api/verify` route. It does not authenticate requests to the backend's `/terms` endpoints. |
+
+The Netlify build uses `npm run build` and publishes the adapter output as configured in `netlify.toml`.

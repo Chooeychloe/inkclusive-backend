@@ -21,9 +21,6 @@ const config = {
 			// if `edge` is true, this option cannot be used
 			split: false
 		})
-	},
-	alias: {
-		'@/*': './path/to/lib/*'
 	}
 };
 

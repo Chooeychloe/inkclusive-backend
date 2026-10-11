@@ -1,5 +1,3 @@
-import aspectRatio from '@tailwindcss/aspect-ratio';
-import containerQueries from '@tailwindcss/container-queries';
 import typography from '@tailwindcss/typography';
 import type { Config } from 'tailwindcss';
 import tailwindcssAnimate from 'tailwindcss-animate';
@@ -84,5 +82,5 @@ export default {
 			}
 		}
 	},
-	plugins: [typography, containerQueries, aspectRatio, tailwindcssAnimate]
+	plugins: [typography, tailwindcssAnimate]
 } satisfies Config;
