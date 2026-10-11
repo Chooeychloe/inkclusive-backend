@@ -10,7 +10,7 @@
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
-	import { AlertTriangle } from 'lucide-svelte';
+	import { AlertTriangle } from '@lucide/svelte';
 
 	import {
 		type SortingState,
@@ -53,6 +53,10 @@
 
 	// Add loading state
 	let isLoading = $state(true);
+	let loadError = $state('');
+	let totalAlternatives = $derived(
+		burger.reduce((total, item) => total + item.alternatives.split(',').filter(Boolean).length, 0)
+	);
 
 	// Derived state for submit button
 	let isSubmitDisabled = $derived(isAuthLoading || !adminPassword.trim());
@@ -104,6 +108,7 @@
 	async function loadEverything() {
 		try {
 			isLoading = true;
+			loadError = '';
 			burger = [];
 			burger2 = [];
 			$listStore = [];
@@ -119,6 +124,7 @@
 			console.log($listStore);
 		} catch (error) {
 			console.error('Error loading data:', error);
+			loadError = 'We could not load the term library. Check the backend connection and try again.';
 		} finally {
 			isLoading = false;
 		}
@@ -259,12 +265,50 @@
 
 <!-- Protected Content (only shown when authenticated) -->
 {#if isAuthenticated}
-	<main class="h-[100svh] min-h-0 w-full flex-col items-center bg-stone-100">
+	<main class="min-h-[100svh] w-full bg-[#f7f7fc] text-slate-900">
 		{#key $listStore}
 			<AdminNavbar></AdminNavbar>
 
-			<div class="p-2">
-				<div class="flex items-center gap-2 py-4">
+			<div class="mx-auto max-w-[1440px] px-4 py-8 sm:px-8 lg:py-10">
+				<div class="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+					<div>
+						<div class="mb-3 inline-flex items-center gap-2 rounded-full bg-violet-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-violet-800">
+							<span class="h-1.5 w-1.5 rounded-full bg-violet-600"></span> Language resources
+						</div>
+						<h1 class="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Term library</h1>
+						<p class="mt-2 max-w-xl text-sm leading-6 text-slate-500 sm:text-base">Manage inclusive language guidance used across Inkclusive suggestions.</p>
+					</div>
+					<div class="flex items-center gap-2 text-sm text-slate-500">
+						<span class="h-2 w-2 rounded-full {loadError ? 'bg-rose-500' : isLoading ? 'animate-pulse bg-amber-400' : 'bg-emerald-500'}"></span>
+						{loadError ? 'Connection issue' : isLoading ? 'Syncing library' : 'Library connected'}
+					</div>
+				</div>
+
+				<div class="mb-6 grid gap-4 sm:grid-cols-3">
+					<div class="rounded-2xl border border-violet-100 bg-white p-5 shadow-sm shadow-violet-950/[0.025]">
+						<p class="text-sm font-medium text-slate-500">Inclusive terms</p>
+						<div class="mt-3 flex items-end justify-between"><p class="text-3xl font-bold tracking-tight text-slate-950">{isLoading ? '—' : burger.length}</p><span class="rounded-lg bg-violet-50 p-2 text-violet-700"><span class="material-symbols-outlined s24">dictionary</span></span></div>
+						<p class="mt-2 text-xs text-slate-400">Managed in your language library</p>
+					</div>
+					<div class="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm shadow-emerald-950/[0.025]">
+						<p class="text-sm font-medium text-slate-500">Alternative suggestions</p>
+						<div class="mt-3 flex items-end justify-between"><p class="text-3xl font-bold tracking-tight text-slate-950">{isLoading ? '—' : totalAlternatives}</p><span class="rounded-lg bg-emerald-50 p-2 text-emerald-700"><span class="material-symbols-outlined s24">forum</span></span></div>
+						<p class="mt-2 text-xs text-slate-400">Options available across all terms</p>
+					</div>
+					<div class="rounded-2xl border border-amber-100 bg-white p-5 shadow-sm shadow-amber-950/[0.025]">
+						<p class="text-sm font-medium text-slate-500">Review workflow</p>
+						<div class="mt-3 flex items-end justify-between"><p class="text-lg font-bold tracking-tight text-slate-950">Keep it inclusive</p><span class="rounded-lg bg-amber-50 p-2 text-amber-700"><span class="material-symbols-outlined s24">volunteer_activism</span></span></div>
+						<p class="mt-2 text-xs text-slate-400">Use clear, respectful language in every entry</p>
+					</div>
+				</div>
+
+				<section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.025]">
+					<div class="flex flex-col gap-4 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+						<div>
+							<h2 class="text-lg font-bold text-slate-900">Managed terms</h2>
+							<p class="mt-1 text-sm text-slate-500">Search, edit, add, or remove language suggestions.</p>
+						</div>
+						<div class="flex flex-col gap-2 sm:flex-row">
 					<Input
 						placeholder="Filter by Term..."
 						value={(table.getColumn('term')?.getFilterValue() as string) ?? ''}
@@ -274,12 +318,16 @@
 						oninput={(e) => {
 							table.getColumn('term')?.setFilterValue(e.currentTarget.value);
 						}}
-						class="max-w-xs"
+						class="w-full sm:w-64"
 						disabled={isLoading}
 					/>
 					<AddTermForm {data}></AddTermForm>
+						</div>
 				</div>
-				<div class="">
+				{#if loadError}
+					<div role="alert" class="m-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{loadError}</div>
+				{/if}
+				<div class="overflow-x-auto px-5 sm:px-6">
 					<Table.Root>
 						<Table.Header>
 							{#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
@@ -303,8 +351,8 @@
 								{#each Array(5) as _, i}
 									<Table.Row>
 										{#each columns as column}
-											<Table.Cell class="border-t border-t-stone-300">
-												<div class="h-4 animate-pulse rounded bg-gray-200"></div>
+											<Table.Cell class="border-t border-t-slate-100">
+												<div class="h-4 animate-pulse rounded bg-slate-100"></div>
 											</Table.Cell>
 										{/each}
 									</Table.Row>
@@ -313,7 +361,7 @@
 								{#each table.getRowModel().rows as row (row.id)}
 									<Table.Row data-state={row.getIsSelected() && 'selected'}>
 										{#each row.getVisibleCells() as cell (cell.id)}
-											<Table.Cell class="border-t border-t-stone-300">
+										<Table.Cell class="border-t border-t-slate-100">
 												<FlexRender
 													content={cell.column.columnDef.cell}
 													context={cell.getContext()}
@@ -331,7 +379,7 @@
 							{/if}
 						</Table.Body>
 					</Table.Root>
-					<div class="flex items-center justify-end space-x-2 border-t border-t-stone-300 py-4">
+					<div class="flex flex-col items-start justify-between gap-4 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:px-6">
 						<div class="flex flex-1 items-center justify-between gap-2">
 							<Button
 								size="sm"
@@ -376,6 +424,7 @@
 						</div>
 					</div>
 				</div>
+				</section>
 			</div>
 
 			<Dialog.Root bind:open={deleteDialogOpen} onOpenChange={handleDeleteDialogClose}>

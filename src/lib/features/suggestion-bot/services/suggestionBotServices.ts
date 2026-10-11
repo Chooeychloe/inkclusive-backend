@@ -8,10 +8,10 @@ import { toast } from 'svelte-sonner';
 import { preferenceStore } from '$lib/stores/preferenceStore';
 import { ignoreGrammarStore } from '$lib/stores/ignoreStore';
 import { getCount } from './countService';
-import { PUBLIC_BACKEND_URL } from '$env/static/public';
+import { env } from '$env/dynamic/public';
 
 // const url = import.meta.env.VITE_BACKEND_URL || 'NOTHING';
-const url = PUBLIC_BACKEND_URL || 'NOTHING';
+const url = env.PUBLIC_BACKEND_URL || 'NOTHING';
 
 console.log('Backend URL:', url);
 

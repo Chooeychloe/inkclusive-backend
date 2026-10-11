@@ -9,7 +9,7 @@
 	import { toast } from 'svelte-sonner';
 	import { textContent } from '$lib/stores/textFromEditorStore';
 	import { preferenceStore } from '$lib/stores/preferenceStore';
-	import { PUBLIC_BACKEND_URL } from '$env/static/public';
+	import { env } from '$env/dynamic/public';
 	import { onMount } from 'svelte';
 	import { GLFScore } from '$lib/stores/omegaLOL';
 	import { ignoreGrammarStore } from '$lib/stores/ignoreStore';
@@ -39,7 +39,7 @@
 		$waitStore = true;
 		if (bruh == 'grammar') {
 			try {
-				const post = await fetch(`${PUBLIC_BACKEND_URL}grammar`, {
+				const post = await fetch(`${env.PUBLIC_BACKEND_URL ?? 'NOTHING'}grammar`, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json'
@@ -117,7 +117,7 @@
 			};
 
 			try {
-				const post = await fetch(`${PUBLIC_BACKEND_URL}gfl`, {
+				const post = await fetch(`${env.PUBLIC_BACKEND_URL ?? 'NOTHING'}gfl`, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json'

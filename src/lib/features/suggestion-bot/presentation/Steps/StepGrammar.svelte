@@ -7,7 +7,7 @@
 
 	import { aiSuggestions, replaceStore } from '$lib/stores/lintingStore';
 	import type { TSuggestion } from '$lib/features/suggestion-bot/entities/suggestions';
-	import { LoaderCircle, Pencil } from 'lucide-svelte';
+	import { LoaderCircle, Pencil } from '@lucide/svelte';
 	import { ignoreGrammarStore } from '$lib/stores/ignoreStore';
 	import { waitStore } from '$lib/stores/waitStore';
 	let {

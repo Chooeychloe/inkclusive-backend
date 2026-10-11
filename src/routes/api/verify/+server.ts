@@ -1,6 +1,6 @@
 // src/routes/api/verify-admin/+server.ts
 import { json } from '@sveltejs/kit';
-import { ADMIN_PASSWORD } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
 
 interface RequestBody {
@@ -12,7 +12,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		const { password }: RequestBody = await request.json();
 
 		// Verify the password against the environment variable
-		if (password === ADMIN_PASSWORD) {
+		if (password && password === env.ADMIN_PASSWORD) {
 			return json({ success: true });
 		} else {
 			return json({ success: false }, { status: 401 });

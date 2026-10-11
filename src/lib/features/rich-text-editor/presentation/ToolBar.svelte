@@ -22,7 +22,7 @@
 		Redo2,
 		Underline,
 		Undo2
-	} from 'lucide-svelte';
+	} from '@lucide/svelte';
 
 	let { view, mySchema }: { view: EditorView; mySchema: Schema } = $props();
 	let currentFontSize = $state('16px'); // Default font size

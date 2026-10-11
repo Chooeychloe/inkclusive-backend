@@ -2,10 +2,10 @@ import { refreshStore } from '$lib/stores/refreshStore';
 import { get } from 'svelte/store';
 import type { TGenderTermProcessed } from './column';
 import { toast } from 'svelte-sonner';
-import { PUBLIC_BACKEND_URL } from '$env/static/public';
+import { env } from '$env/dynamic/public';
 
 // const url = import.meta.env.VITE_BACKEND_URL || 'NOTHING';
-const url = PUBLIC_BACKEND_URL || 'NOTHING';
+const url = env.PUBLIC_BACKEND_URL || 'NOTHING';
 
 type TermsResponse = { [key: string]: string[] };
 

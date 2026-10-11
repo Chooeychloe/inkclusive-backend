@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CloudUpload, FolderOpen, LoaderCircle } from 'lucide-svelte';
+	import { CloudUpload, FolderOpen, LoaderCircle } from '@lucide/svelte';
 	import { dragOverHandler } from '../use-case/dragAndDropEvents';
 	import { getSuffix } from '$lib/features/document-scan/use-case/utilts';
 	import { signalTextEditor } from '$lib/stores/signalStore';

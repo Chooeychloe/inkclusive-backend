@@ -3,7 +3,7 @@
 	import { Button } from '$lib/components/ui/button';
 	let { nextSlide }: { nextSlide: () => Promise<void> } = $props();
 	import { textContent } from '$lib/stores/textFromEditorStore';
-	import { LoaderCircle } from 'lucide-svelte';
+	import { LoaderCircle } from '@lucide/svelte';
 
 	let isLoading = $state(false);
 	async function proceed() {

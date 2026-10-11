@@ -3,7 +3,7 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { formatDistanceStrict } from 'date-fns';
 	import Button from '$lib/components/ui/button/button.svelte';
-	import { Trash } from 'lucide-svelte';
+	import { Trash } from '@lucide/svelte';
 	import { textContent, textContentHTML, textTitle } from '$lib/stores/textFromEditorStore';
 	import { goto } from '$app/navigation';
 	import { cn } from '$lib/utils';

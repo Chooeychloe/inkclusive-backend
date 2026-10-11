@@ -5,15 +5,14 @@
 	import * as Dialog from '$lib/components/ui/dialog';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import { Label } from '$lib/components/ui/label';
-	import { type SuperValidated, type Infer, superForm } from 'sveltekit-superforms';
-	import { zodClient } from 'sveltekit-superforms/adapters';
-	import { formSchema, type FormSchema } from './schema';
-	import type { infer } from 'zod';
+	import { type SuperValidated, superForm } from 'sveltekit-superforms';
+	import { zod4Client as zodClient } from 'sveltekit-superforms/adapters';
+	import { formSchema } from './schema';
 	import { postBulkList } from './service';
 
 	interface Props {
 		data: {
-			form: SuperValidated<Infer<FormSchema>>;
+			form: SuperValidated<{ term: string; alternatives: string }>;
 		};
 	}
 

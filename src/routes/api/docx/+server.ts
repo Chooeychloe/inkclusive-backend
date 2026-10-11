@@ -14,7 +14,12 @@ export const POST: RequestHandler = async ({ request }) => {
 		});
 
 		// 3. Set response headers for file download
-		return new Response(docxBuffer, {
+		const responseBody =
+			docxBuffer instanceof Blob
+				? await docxBuffer.arrayBuffer()
+				: Uint8Array.from(docxBuffer).buffer;
+
+		return new Response(responseBody, {
 			headers: {
 				'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 				'Content-Disposition': 'attachment; filename=document.docx'
