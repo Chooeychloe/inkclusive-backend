@@ -130,7 +130,7 @@
 	});
 </script>
 
-<div class="flex flex-1 flex-col items-center bg-stone-50 xl:h-full">
+<div class="flex flex-1 flex-col items-center bg-card xl:h-full">
 	<ScrollArea
 		class="max-h-[400px] w-full flex-1 shadow-inner lg:max-h-[600px] xl:max-h-[800px]"
 		onclick={() => {
@@ -143,7 +143,7 @@
 			<div
 				bind:this={editorContainer}
 				class={cn(
-					'editor__paragraph prose prose-sm w-full flex-1 text-stone-800 lg:prose-base xl:prose-lg',
+					'editor__paragraph prose prose-sm w-full flex-1 text-foreground lg:prose-base xl:prose-lg',
 					$progressStore > 0 && 'pointer-events-none'
 				)}
 				id="editor"

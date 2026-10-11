@@ -7,6 +7,7 @@
 	import { buttonVariants } from '$lib/components/ui/button/index.js';
 	import { cn } from '$lib/utils';
 	import { toast } from 'svelte-sonner';
+	import { Download } from '@lucide/svelte';
 
 	async function downloadDocx() {
 		const response = await fetch('/api/docx', {
@@ -39,7 +40,7 @@
 	>
 		<p>Export As</p>
 
-		<span class="material-symbols-outlined s26"> upgrade</span>
+		<Download class="size-5" aria-hidden="true" />
 	</DropdownMenu.Trigger>
 	<DropdownMenu.Content>
 		<DropdownMenu.Group class="w-[250px]">

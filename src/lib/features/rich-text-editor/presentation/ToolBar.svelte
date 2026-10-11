@@ -5,7 +5,6 @@
 	import type { EditorView } from 'prosemirror-view';
 	import { undo, redo } from 'prosemirror-history';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { wrapInList } from 'prosemirror-schema-list';
 	import { MarkType } from 'prosemirror-model';
 
@@ -28,9 +27,14 @@
 	let currentFontSize = $state('16px'); // Default font size
 	let currentFontFamily = $state('Arial'); // Default font family
 	let currentColor = $state('black');
+	let currentTextStyle = $state('Normal');
+	let activeTab = $state<'Home' | 'Paragraph'>('Home');
+	let activeMarks = $state({ bold: false, italic: false, underline: false });
+	let activeAlignment = $state('left');
+	let currentBulletStyle = $state('disc');
+	let inBulletList = $state(false);
 	function setFontSize(size: string) {
 		if (!view) return;
-		console.log('setFontSize', size);
 
 		const { state, dispatch } = view;
 		const { from, to } = state.selection;
@@ -45,7 +49,6 @@
 
 	function setFontFamily(fontFamily: string) {
 		if (!view) return;
-		console.log('setFontFamily', fontFamily);
 
 		const { state, dispatch } = view;
 		const { from, to } = state.selection;
@@ -92,6 +95,7 @@
 		if (!view) return;
 		const colorMark = mySchema.marks.color;
 		applyTextColor(view, colorMark, color);
+		currentColor = color;
 	}
 
 	// Function to update the current font size based on the selection
@@ -99,18 +103,58 @@
 		if (!view) return;
 
 		const { state } = view;
-		const { $from: selectionFrom } = state.selection;
+		const { $from: selectionFrom, from, to, empty } = state.selection;
 		const node = selectionFrom.node(selectionFrom.depth);
 
 		if (node.type === mySchema.nodes.paragraph || node.type === mySchema.nodes.heading) {
 			currentFontSize = node.attrs.fontSize || '16px';
 			currentFontFamily = node.attrs.fontFamily || 'Arial';
+			activeAlignment = node.attrs.align || 'left';
+			currentTextStyle = node.type === mySchema.nodes.heading ? `Heading ${node.attrs.level}` : 'Normal';
+		}
+
+		const activeMarksAtCursor = state.storedMarks ?? selectionFrom.marks();
+		activeMarks = {
+			bold: empty
+				? mySchema.marks.bold.isInSet(activeMarksAtCursor) !== undefined
+				: state.doc.rangeHasMark(from, to, mySchema.marks.bold),
+			italic: empty
+				? mySchema.marks.italic.isInSet(activeMarksAtCursor) !== undefined
+				: state.doc.rangeHasMark(from, to, mySchema.marks.italic),
+		underline: empty
+				? mySchema.marks.underline.isInSet(activeMarksAtCursor) !== undefined
+				: state.doc.rangeHasMark(from, to, mySchema.marks.underline)
+		};
+		const colorMark =
+			state.storedMarks?.find((mark) => mark.type === mySchema.marks.color) ??
+			selectionFrom.marks().find((mark) => mark.type === mySchema.marks.color);
+		currentColor = colorMark?.attrs.color ?? 'black';
+
+		inBulletList = false;
+		for (let depth = selectionFrom.depth; depth > 0; depth -= 1) {
+			const ancestor = selectionFrom.node(depth);
+			if (ancestor.type === mySchema.nodes.bullet_list) {
+				inBulletList = true;
+				currentBulletStyle = ancestor.attrs.listStyle || 'disc';
+				break;
+			}
 		}
 	}
 
-	// Add an event listener to update the current font size whenever the selection changes
-	view.dom.addEventListener('mouseup', updateCurrentFontSize);
-	view.dom.addEventListener('keyup', updateCurrentFontSize);
+	$effect(() => {
+		const editorView = view;
+		if (!editorView) return;
+		updateCurrentFontSize();
+		const update = () => updateCurrentFontSize();
+		editorView.dom.addEventListener('mouseup', update);
+		editorView.dom.addEventListener('keyup', update);
+		editorView.dom.addEventListener('inkclusive:selectionchange', update);
+		return () => {
+			editorView.dom.removeEventListener('mouseup', update);
+			editorView.dom.removeEventListener('keyup', update);
+			editorView.dom.removeEventListener('inkclusive:selectionchange', update);
+		};
+	});
 
 	function toggleHeading(level: number) {
 		if (!view) return;
@@ -160,23 +204,26 @@
 	}
 	function toggleBulletList() {
 		if (!view) return false;
-		return wrapInList(mySchema.nodes.bullet_list)(view.state, view.dispatch, view);
+		return wrapInList(mySchema.nodes.bullet_list, { listStyle: currentBulletStyle })(
+			view.state,
+			view.dispatch,
+			view
+		);
 	}
 
-	function isInbulletList() {
-		if (!view) return false;
-		const { state } = view;
-		const { from, to } = state.selection;
-		let isInList = false;
-
-		state.doc.nodesBetween(from, to, (node) => {
+	function setBulletStyle(style: string) {
+		if (!view) return;
+		currentBulletStyle = style;
+		const { state, dispatch } = view;
+		for (let depth = state.selection.$from.depth; depth > 0; depth -= 1) {
+			const node = state.selection.$from.node(depth);
 			if (node.type === mySchema.nodes.bullet_list) {
-				isInList = true;
-				return false;
+				const position = state.selection.$from.before(depth);
+				dispatch(state.tr.setNodeMarkup(position, undefined, { ...node.attrs, listStyle: style }));
+				return;
 			}
-		});
-
-		return isInList;
+		}
+		wrapInList(mySchema.nodes.bullet_list, { listStyle: style })(state, dispatch, view);
 	}
 
 	function canApplyBulletList() {
@@ -185,311 +232,126 @@
 	}
 </script>
 
-<div class="hidden items-center justify-center gap-3 lg:flex">
-	<!-- Display current font size -->
-
-	<!-- Heading -->
-	<DropdownMenu.Root>
-		<DropdownMenu.Trigger>
-			<Button variant="secondary" class="rounded-md p-1">H <ChevronDown /></Button>
-		</DropdownMenu.Trigger>
-		<DropdownMenu.Content>
-			<DropdownMenu.Group>
-				<DropdownMenu.Label>All Headings</DropdownMenu.Label>
-				<DropdownMenu.Separator />
-				<DropdownMenu.Item onclick={() => toggleHeading(1)}>Heading 1</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => toggleHeading(2)}>Heading 2</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => toggleHeading(3)}>Heading 3</DropdownMenu.Item>
-			</DropdownMenu.Group>
-		</DropdownMenu.Content>
-	</DropdownMenu.Root>
-
-	<!-- Font Size -->
-	<DropdownMenu.Root>
-		<DropdownMenu.Trigger>
-			<Button variant="secondary" class="w-[90px] rounded-md p-1 text-xs 2xl:text-base"
-				>Size: {currentFontSize} <ChevronDown /></Button
+<div class="w-full border-b border-border bg-card">
+	<div class="flex items-center justify-between border-b border-border/70 bg-background/60 px-2">
+		<div class="flex items-center gap-1" role="tablist" aria-label="Editor ribbon">
+			<button
+				type="button"
+				role="tab"
+				aria-selected={activeTab === 'Home'}
+				class="border-b-2 px-3 py-2 text-sm font-medium transition-colors {activeTab === 'Home'
+					? 'border-primary text-primary'
+					: 'border-transparent text-muted-foreground hover:text-foreground'}"
+				onclick={() => (activeTab = 'Home')}>Home</button
 			>
-		</DropdownMenu.Trigger>
-		<DropdownMenu.Content>
-			<DropdownMenu.Group>
-				<DropdownMenu.Label>Font Sizes</DropdownMenu.Label>
-				<DropdownMenu.Separator />
-				<DropdownMenu.Item onclick={() => setFontSize('8pt')}>8</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => setFontSize('10pt')}>10</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => setFontSize('12pt')}>12</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => setFontSize('14pt')}>14</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => setFontSize('16pt')}>16</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => setFontSize('18pt')}>18</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => setFontSize('20pt')}>20</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => setFontSize('24pt')}>24</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => setFontSize('28pt')}>28</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => setFontSize('32pt')}>32</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => setFontSize('36pt')}>36</DropdownMenu.Item>
-			</DropdownMenu.Group>
-		</DropdownMenu.Content>
-	</DropdownMenu.Root>
-
-	<!-- color -->
-	<DropdownMenu.Root>
-		<DropdownMenu.Trigger>
-			<Button
-				style={`color:${currentColor};`}
-				variant="secondary"
-				class="w-[90px] rounded-md p-1 text-xs 2xl:text-base">Color: <ChevronDown /></Button
+			<button
+				type="button"
+				role="tab"
+				aria-selected={activeTab === 'Paragraph'}
+				class="border-b-2 px-3 py-2 text-sm font-medium transition-colors {activeTab === 'Paragraph'
+					? 'border-primary text-primary'
+					: 'border-transparent text-muted-foreground hover:text-foreground'}"
+				onclick={() => (activeTab = 'Paragraph')}>Paragraph</button
 			>
-		</DropdownMenu.Trigger>
-		<DropdownMenu.Content>
-			<DropdownMenu.Group>
-				<DropdownMenu.Label>Color</DropdownMenu.Label>
-				<DropdownMenu.Separator />
-				<DropdownMenu.Item
-					onclick={() => {
-						setColor('oklch(57.7% 0.245 27.325)');
-					}}>Red</DropdownMenu.Item
-				>
-				<DropdownMenu.Item
-					onclick={() => {
-						setColor('oklch(64.6% 0.222 41.116)');
-					}}>Orange</DropdownMenu.Item
-				>
-				<DropdownMenu.Item
-					onclick={() => {
-						setColor('oklch(79.5% 0.184 86.047)');
-					}}>Yellow</DropdownMenu.Item
-				>
-				<DropdownMenu.Item
-					onclick={() => {
-						setColor('oklch(52.7% 0.154 150.069)');
-					}}>Green</DropdownMenu.Item
-				>
-				<DropdownMenu.Item
-					onclick={() => {
-						setColor('oklch(54.6% 0.245 262.881)');
-					}}>Blue</DropdownMenu.Item
-				>
-				<DropdownMenu.Item
-					onclick={() => {
-						setColor('oklch(54.1% 0.281 293.009)');
-					}}>Violet</DropdownMenu.Item
-				>
-			</DropdownMenu.Group>
-		</DropdownMenu.Content>
-	</DropdownMenu.Root>
-
-	<!-- Font Family -->
-	<DropdownMenu.Root>
-		<DropdownMenu.Trigger>
-			<Button
-				variant="secondary"
-				class="flex items-center  justify-start rounded-md p-1 lg:w-[100px] 2xl:w-[150px]"
-				><p class="text-xs 2xl:text-base">Font:</p>
-				<span class="hidden truncate text-xs 2xl:block 2xl:text-base"
-					>{currentFontFamily}
-				</span><ChevronDown /></Button
-			>
-		</DropdownMenu.Trigger>
-		<DropdownMenu.Content>
-			<DropdownMenu.Group>
-				<DropdownMenu.Label>Font Families</DropdownMenu.Label>
-				<DropdownMenu.Separator />
-
-				<DropdownMenu.Item onclick={() => setFontFamily('Arial')}>Arial</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => setFontFamily('Helvetica')}>Helvetica</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => setFontFamily('Verdana')}>Verdana</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => setFontFamily('Tahoma')}>Tahoma</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => setFontFamily('Trebuchet MS')}
-					>Trebuchet MS</DropdownMenu.Item
-				>
-
-				<DropdownMenu.Separator />
-
-				<DropdownMenu.Item onclick={() => setFontFamily('Times New Roman')}
-					>Times New Roman</DropdownMenu.Item
-				>
-				<DropdownMenu.Item onclick={() => setFontFamily('Times')}>Times</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => setFontFamily('Georgia')}>Georgia</DropdownMenu.Item>
-
-				<DropdownMenu.Separator />
-
-				<DropdownMenu.Item onclick={() => setFontFamily('Courier New')}
-					>Courier New</DropdownMenu.Item
-				>
-				<DropdownMenu.Item onclick={() => setFontFamily('Courier')}>Courier</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => setFontFamily('Consolas')}>Consolas</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={() => setFontFamily('Monaco')}>Monaco</DropdownMenu.Item>
-			</DropdownMenu.Group>
-		</DropdownMenu.Content>
-	</DropdownMenu.Root>
-
-	<!-- Styles -->
-	<div class="border-x border-solid border-stone-300 px-1">
-		<Tooltip.Provider>
-			<Tooltip.Root>
-				<Tooltip.Trigger>
-					<Button size="icon" class="h-6 w-6" variant="ghost" onclick={toggleBold}><Bold /></Button>
-				</Tooltip.Trigger>
-				<Tooltip.Content>
-					<p class="text-sm text-muted-foreground">Bold</p>
-				</Tooltip.Content>
-			</Tooltip.Root>
-		</Tooltip.Provider>
-		<!-- Under line -->
-		<Tooltip.Provider>
-			<Tooltip.Root>
-				<Tooltip.Trigger>
-					<Button size="icon" class="h-6 w-6" variant="ghost" onclick={toggleUnderline}>
-						<Underline></Underline>
-					</Button>
-				</Tooltip.Trigger>
-				<Tooltip.Content>
-					<p>Underline</p>
-				</Tooltip.Content>
-			</Tooltip.Root>
-		</Tooltip.Provider>
-		<Tooltip.Provider>
-			<Tooltip.Root>
-				<Tooltip.Trigger>
-					<Button size="icon" class="h-6 w-6" variant="ghost" onclick={toggleItalic}
-						><Italic /></Button
-					>
-				</Tooltip.Trigger>
-				<Tooltip.Content>
-					<p>Italic</p>
-				</Tooltip.Content>
-			</Tooltip.Root>
-		</Tooltip.Provider>
-
-		<Tooltip.Provider>
-			<Tooltip.Root>
-				<Tooltip.Trigger>
-					<Button size="icon" class="h-6 w-6" variant="ghost" onclick={toggleParagraph}
-						><Pilcrow /></Button
-					>
-				</Tooltip.Trigger>
-				<Tooltip.Content>
-					<p>Paragraph</p>
-				</Tooltip.Content>
-			</Tooltip.Root>
-		</Tooltip.Provider>
+		</div>
+		<div class="flex items-center border-l border-border pl-1">
+			<Button size="icon" class="h-8 w-8" variant="ghost" aria-label="Undo" title="Undo" onclick={() => undo(view.state, view.dispatch)}><Undo2 /></Button>
+			<Button size="icon" class="h-8 w-8" variant="ghost" aria-label="Redo" title="Redo" onclick={() => redo(view.state, view.dispatch)}><Redo2 /></Button>
+		</div>
 	</div>
 
-	<!-- alignment -->
-	<div class="border-r border-solid border-stone-300 px-1">
-		<!-- Justify -->
-		<Tooltip.Provider>
-			<Tooltip.Root>
-				<Tooltip.Trigger>
-					<Button
-						size="icon"
-						class="m-0 h-6 w-6"
-						variant="ghost"
-						onclick={() => setTextAlign('left')}><AlignLeft /></Button
-					>
-				</Tooltip.Trigger>
-				<Tooltip.Content>
-					<p>Align Left</p>
-				</Tooltip.Content>
-			</Tooltip.Root>
-		</Tooltip.Provider>
-
-		<!-- Align Center -->
-		<Tooltip.Provider>
-			<Tooltip.Root>
-				<Tooltip.Trigger>
-					<Button size="icon" class="h-6 w-6" variant="ghost" onclick={() => setTextAlign('center')}
-						><AlignCenter /></Button
-					>
-				</Tooltip.Trigger>
-				<Tooltip.Content>
-					<p>Align Center</p>
-				</Tooltip.Content>
-			</Tooltip.Root>
-		</Tooltip.Provider>
-
-		<!-- Align Right -->
-		<Tooltip.Provider>
-			<Tooltip.Root>
-				<Tooltip.Trigger>
-					<Button size="icon" class="h-6 w-6" variant="ghost" onclick={() => setTextAlign('right')}
-						><AlignRight /></Button
-					>
-				</Tooltip.Trigger>
-				<Tooltip.Content>
-					<p>Align Right</p>
-				</Tooltip.Content>
-			</Tooltip.Root>
-		</Tooltip.Provider>
-		<!-- JUSTIFY -->
-		<Tooltip.Provider>
-			<Tooltip.Root>
-				<Tooltip.Trigger>
-					<Button
-						size="icon"
-						class="h-6 w-6"
-						variant="ghost"
-						onclick={() => setTextAlign('justify')}
-					>
-						<AlignJustify></AlignJustify>
-					</Button>
-				</Tooltip.Trigger>
-				<Tooltip.Content>
-					<p>Align Justify</p>
-				</Tooltip.Content>
-			</Tooltip.Root>
-		</Tooltip.Provider>
-	</div>
-
-	<!-- bullet -->
-
-	<Tooltip.Provider>
-		<Tooltip.Root>
-			<Tooltip.Trigger>
-				<Button
-					size="icon"
-					variant="ghost"
-					disabled={!canApplyBulletList()}
-					onclick={() => toggleBulletList()}
-				>
-					<List></List>
-				</Button>
-			</Tooltip.Trigger>
-			<Tooltip.Content>
-				<p>Add Bullets</p>
-			</Tooltip.Content>
-		</Tooltip.Root>
-	</Tooltip.Provider>
-	<!-- history -->
-	<div class="flex items-center justify-center">
-		<!-- Undo -->
-		<Tooltip.Provider>
-			<Tooltip.Root>
-				<Tooltip.Trigger>
-					<Button size="icon" variant="ghost" onclick={() => undo(view.state, view.dispatch)}
-						><Undo2 /></Button
-					>
-				</Tooltip.Trigger>
-				<Tooltip.Content>
-					<p>Undo</p>
-				</Tooltip.Content>
-			</Tooltip.Root>
-		</Tooltip.Provider>
-
-		<!-- Redo -->
-		<Tooltip.Provider>
-			<Tooltip.Root>
-				<Tooltip.Trigger>
-					<Button
-						size="icon"
-						class="h-6 w-6"
-						variant="ghost"
-						onclick={() => redo(view.state, view.dispatch)}><Redo2 /></Button
-					>
-				</Tooltip.Trigger>
-				<Tooltip.Content>
-					<p>Redo</p>
-				</Tooltip.Content>
-			</Tooltip.Root>
-		</Tooltip.Provider>
-	</div>
+	{#if activeTab === 'Home'}
+		<div class="flex min-h-[88px] flex-wrap items-stretch gap-x-1 px-2 py-2" role="tabpanel" aria-label="Home">
+			<div class="flex min-w-0 flex-col justify-between border-r border-border px-2 pb-1 pr-3">
+				<div class="flex flex-wrap items-center gap-1">
+					<DropdownMenu.Root>
+						<DropdownMenu.Trigger><Button variant="secondary" class="h-8 rounded-md px-2">{currentTextStyle}<ChevronDown /></Button></DropdownMenu.Trigger>
+						<DropdownMenu.Content>
+							<DropdownMenu.Group>
+								<DropdownMenu.Label>Text style</DropdownMenu.Label><DropdownMenu.Separator />
+								<DropdownMenu.Item onclick={() => toggleParagraph()}>Normal paragraph</DropdownMenu.Item>
+								<DropdownMenu.Item onclick={() => toggleHeading(1)}>Heading 1</DropdownMenu.Item>
+								<DropdownMenu.Item onclick={() => toggleHeading(2)}>Heading 2</DropdownMenu.Item>
+								<DropdownMenu.Item onclick={() => toggleHeading(3)}>Heading 3</DropdownMenu.Item>
+							</DropdownMenu.Group>
+						</DropdownMenu.Content>
+					</DropdownMenu.Root>
+					<DropdownMenu.Root>
+						<DropdownMenu.Trigger><Button variant="secondary" class="h-8 w-[88px] px-2 text-xs">{currentFontSize}<ChevronDown /></Button></DropdownMenu.Trigger>
+						<DropdownMenu.Content>
+							<DropdownMenu.Group><DropdownMenu.Label>Font size</DropdownMenu.Label><DropdownMenu.Separator />
+								{#each ['8pt', '10pt', '12pt', '14pt', '16pt', '18pt', '20pt', '24pt', '28pt', '32pt', '36pt'] as size}
+									<DropdownMenu.Item onclick={() => setFontSize(size)}>{size}</DropdownMenu.Item>
+								{/each}
+							</DropdownMenu.Group>
+						</DropdownMenu.Content>
+					</DropdownMenu.Root>
+					<DropdownMenu.Root>
+						<DropdownMenu.Trigger><Button variant="secondary" class="h-8 w-[100px] justify-between px-2 text-xs"><span class="truncate">{currentFontFamily}</span><ChevronDown /></Button></DropdownMenu.Trigger>
+						<DropdownMenu.Content>
+							<DropdownMenu.Group><DropdownMenu.Label>Font family</DropdownMenu.Label><DropdownMenu.Separator />
+								{#each ['Arial', 'Helvetica', 'Verdana', 'Tahoma', 'Trebuchet MS', 'Times New Roman', 'Times', 'Georgia', 'Courier New', 'Courier', 'Consolas', 'Monaco'] as fontFamily}
+									<DropdownMenu.Item onclick={() => setFontFamily(fontFamily)}>{fontFamily}</DropdownMenu.Item>
+								{/each}
+							</DropdownMenu.Group>
+						</DropdownMenu.Content>
+					</DropdownMenu.Root>
+				</div>
+				<div class="flex items-center gap-1">
+					<Button size="icon" class="h-8 w-8 font-bold" variant={activeMarks.bold ? 'secondary' : 'ghost'} aria-pressed={activeMarks.bold} aria-label="Bold" title="Bold" onclick={toggleBold}><Bold /></Button>
+					<Button size="icon" class="h-8 w-8 italic" variant={activeMarks.italic ? 'secondary' : 'ghost'} aria-pressed={activeMarks.italic} aria-label="Italic" title="Italic" onclick={toggleItalic}><Italic /></Button>
+					<Button size="icon" class="h-8 w-8 underline" variant={activeMarks.underline ? 'secondary' : 'ghost'} aria-pressed={activeMarks.underline} aria-label="Underline" title="Underline" onclick={toggleUnderline}><Underline /></Button>
+					<DropdownMenu.Root>
+						<DropdownMenu.Trigger><Button variant="ghost" class="h-8 gap-1 px-2 text-xs" style={`color:${currentColor}`} aria-label="Text color" title="Text color"><span class="h-4 w-4 rounded border border-border" style={`background-color:${currentColor}`}></span><span class="hidden sm:inline">Text color</span><ChevronDown /></Button></DropdownMenu.Trigger>
+						<DropdownMenu.Content><DropdownMenu.Group><DropdownMenu.Label>Text color</DropdownMenu.Label><DropdownMenu.Separator />
+							<DropdownMenu.Item onclick={() => setColor('black')}>Black</DropdownMenu.Item>
+							<DropdownMenu.Item onclick={() => setColor('oklch(57.7% 0.245 27.325)')}>Red</DropdownMenu.Item>
+							<DropdownMenu.Item onclick={() => setColor('oklch(64.6% 0.222 41.116)')}>Orange</DropdownMenu.Item>
+							<DropdownMenu.Item onclick={() => setColor('oklch(79.5% 0.184 86.047)')}>Yellow</DropdownMenu.Item>
+							<DropdownMenu.Item onclick={() => setColor('oklch(52.7% 0.154 150.069)')}>Green</DropdownMenu.Item>
+							<DropdownMenu.Item onclick={() => setColor('oklch(54.6% 0.245 262.881)')}>Blue</DropdownMenu.Item>
+							<DropdownMenu.Item onclick={() => setColor('oklch(54.1% 0.281 293.009)')}>Violet</DropdownMenu.Item>
+						</DropdownMenu.Group></DropdownMenu.Content>
+					</DropdownMenu.Root>
+				</div>
+				<span class="mt-1 text-center text-[10px] text-muted-foreground">Font</span>
+			</div>
+		</div>
+	{:else}
+		<div class="flex min-h-[88px] flex-wrap items-stretch gap-x-1 px-2 py-2" role="tabpanel" aria-label="Paragraph">
+			<div class="flex flex-col justify-between border-r border-border px-3 pb-1">
+				<div class="flex items-center gap-1">
+					<Button size="icon" class="h-8 w-8" variant={activeAlignment === 'left' ? 'secondary' : 'ghost'} aria-pressed={activeAlignment === 'left'} aria-label="Align left" title="Align left" onclick={() => setTextAlign('left')}><AlignLeft /></Button>
+					<Button size="icon" class="h-8 w-8" variant={activeAlignment === 'center' ? 'secondary' : 'ghost'} aria-pressed={activeAlignment === 'center'} aria-label="Align center" title="Align center" onclick={() => setTextAlign('center')}><AlignCenter /></Button>
+					<Button size="icon" class="h-8 w-8" variant={activeAlignment === 'right' ? 'secondary' : 'ghost'} aria-pressed={activeAlignment === 'right'} aria-label="Align right" title="Align right" onclick={() => setTextAlign('right')}><AlignRight /></Button>
+					<Button size="icon" class="h-8 w-8" variant={activeAlignment === 'justify' ? 'secondary' : 'ghost'} aria-pressed={activeAlignment === 'justify'} aria-label="Justify" title="Justify" onclick={() => setTextAlign('justify')}><AlignJustify /></Button>
+				</div>
+				<span class="mt-1 text-center text-[10px] text-muted-foreground">Alignment</span>
+			</div>
+			<div class="flex flex-col justify-between px-3 pb-1">
+				<div class="flex items-center gap-1">
+					<Button size="icon" class="h-8 w-8" variant={inBulletList ? 'secondary' : 'ghost'} aria-pressed={inBulletList} aria-label="Bulleted list" title="Bulleted list" disabled={!inBulletList && !canApplyBulletList()} onclick={toggleBulletList}><List /></Button>
+					<DropdownMenu.Root>
+						<DropdownMenu.Trigger><Button variant="outline" class="h-8 gap-1 px-2 text-xs" aria-label="Bullet style" title="Bullet style"><span class="text-base leading-none">{currentBulletStyle === 'disc' ? '•' : currentBulletStyle === 'circle' ? '○' : '▪'}</span><ChevronDown /></Button></DropdownMenu.Trigger>
+						<DropdownMenu.Content><DropdownMenu.Group><DropdownMenu.Label>Bullet style</DropdownMenu.Label><DropdownMenu.Separator />
+							<DropdownMenu.Item onclick={() => setBulletStyle('disc')}>• Disc</DropdownMenu.Item>
+							<DropdownMenu.Item onclick={() => setBulletStyle('circle')}>○ Circle</DropdownMenu.Item>
+							<DropdownMenu.Item onclick={() => setBulletStyle('square')}>▪ Square</DropdownMenu.Item>
+						</DropdownMenu.Group></DropdownMenu.Content>
+					</DropdownMenu.Root>
+					<Button size="icon" class="h-8 w-8" variant="ghost" aria-label="Paragraph" title="Paragraph" onclick={toggleParagraph}><Pilcrow /></Button>
+					<DropdownMenu.Root>
+						<DropdownMenu.Trigger><Button variant="secondary" class="h-8 px-2">Heading style <ChevronDown /></Button></DropdownMenu.Trigger>
+						<DropdownMenu.Content><DropdownMenu.Group><DropdownMenu.Label>Text style</DropdownMenu.Label><DropdownMenu.Separator />
+							<DropdownMenu.Item onclick={() => toggleParagraph()}>Normal paragraph</DropdownMenu.Item>
+							<DropdownMenu.Item onclick={() => toggleHeading(1)}>Heading 1</DropdownMenu.Item>
+							<DropdownMenu.Item onclick={() => toggleHeading(2)}>Heading 2</DropdownMenu.Item>
+							<DropdownMenu.Item onclick={() => toggleHeading(3)}>Heading 3</DropdownMenu.Item>
+						</DropdownMenu.Group></DropdownMenu.Content>
+					</DropdownMenu.Root>
+				</div>
+				<span class="mt-1 text-center text-[10px] text-muted-foreground">Lists and styles</span>
+			</div>
+		</div>
+	{/if}
 </div>

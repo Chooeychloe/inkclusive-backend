@@ -7,7 +7,7 @@
 
 	import { aiSuggestions, replaceStore } from '$lib/stores/lintingStore';
 	import type { TSuggestion } from '$lib/features/suggestion-bot/entities/suggestions';
-	import { LoaderCircle, Pencil } from '@lucide/svelte';
+	import { ArrowRight, LoaderCircle, Pencil } from '@lucide/svelte';
 	import { ignoreGrammarStore } from '$lib/stores/ignoreStore';
 	import { waitStore } from '$lib/stores/waitStore';
 	let {
@@ -83,7 +83,7 @@
 				{#if isLoading}
 					<LoaderCircle class="animate-spin" />
 				{:else}
-					<span class="material-symbols-outlined s16">arrow_forward_ios</span>
+					<ArrowRight class="size-4" aria-hidden="true" />
 				{/if}
 			</Button>
 			<Button
@@ -95,7 +95,7 @@
 				}}
 				><p>Back To Step 1</p>
 
-				<span class="material-symbols-outlined s26">edit</span>
+				<Pencil class="size-5" aria-hidden="true" />
 			</Button>
 			<Button
 				class=" w-full"

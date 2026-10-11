@@ -8,6 +8,7 @@
 	import * as Select from '$lib/components/ui/select/index.js';
 	import { preferenceStore } from '$lib/stores/preferenceStore';
 	import { onMount } from 'svelte';
+	import { ArrowLeft, Brain, CircleHelp, Plus, Trash2 } from '@lucide/svelte';
 	let { toPreferenceModule }: { toPreferenceModule: () => void } = $props();
 
 	let preferences = $state<TformSchema[]>([{ name: '', pronoun: '' }]);
@@ -46,17 +47,19 @@
 <div class="h-full w-full">
 	<!--	heading-->
 	<div
-		class="flex h-14 w-full items-center justify-between gap-2 border-b border-solid border-stone-300 bg-stone-50 p-3"
+		class="flex h-14 w-full items-center justify-between gap-2 border-b border-solid border-border bg-card p-3"
 	>
 		<div class="flex items-center justify-start gap-2">
-			<span class="material-symbols-outlined  s36 text-purple-700">psychology</span>
+			<Brain class="size-7 text-primary" aria-hidden="true" />
 			<h2 class="text-xl text-purple-700 font-semibold">Preference</h2>
 		</div>
 
 		<Tooltip.Provider>
 			<Tooltip.Root>
 				<Tooltip.Trigger>
-					<span class="material-symbols-outlined s26 text-purple-700">info</span>
+					<button type="button" class="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-accent-foreground" aria-label="About pronoun preferences">
+						<CircleHelp class="size-5" aria-hidden="true" />
+					</button>
 				</Tooltip.Trigger>
 				<Tooltip.Content class="w-64">
 					<p>
@@ -74,7 +77,7 @@
 				class="group flex items-center justify-start gap-2"
 				onclick={() => toPreferenceModule()}
 			>
-				<span class="material-symbols-outlined s26 text-purple-700">arrow_back</span>
+				<ArrowLeft class="size-5 text-primary" aria-hidden="true" />
 				<span class="text-base text-purple-700 group-hover:underline"> Back </span>
 			</button>
 		</div>
@@ -127,15 +130,15 @@
 					<!--remove entry-->
 					<button
 						class={cn('group', index === 0 && 'mt-5')}
+						aria-label="Remove preference for {preference.name || 'this person'}"
+						title="Remove preference"
 						onclick={() => {
 							preferences.splice(index, 1);
 							$preferenceStore = preferences;
 							localStorage.setItem('preferences', JSON.stringify($preferenceStore));
 						}}
 					>
-						<span class="material-symbols-outlined s26 text-stone-500 group-hover:text-red-500"
-							>cancel</span
-						>
+						<Trash2 class="size-5 text-muted-foreground group-hover:text-destructive" aria-hidden="true" />
 					</button>
 				</div>
 			{/each}
@@ -149,6 +152,8 @@
 			<Button
 				class="h-10 w-10 rounded-full"
 				variant="outline"
+				aria-label="Add another preference"
+				title="Add another preference"
 				onclick={() => {
 					preferences = [...preferences, { name: '', pronoun: '' }];
 					$preferenceStore = preferences;
@@ -156,7 +161,7 @@
 					console.log(localStorage.getItem('preferences'));
 				}}
 			>
-				<span class="material-symbols-outlined s26 text-purple-700">add</span></Button
+				<Plus class="size-5 text-primary" aria-hidden="true" /></Button
 			>
 		</div>
 	</div>

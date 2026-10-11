@@ -3,7 +3,7 @@
 	import { Button } from '$lib/components/ui/button';
 	let { nextSlide }: { nextSlide: () => Promise<void> } = $props();
 	import { textContent } from '$lib/stores/textFromEditorStore';
-	import { LoaderCircle } from '@lucide/svelte';
+	import { ArrowRight, LoaderCircle } from '@lucide/svelte';
 
 	let isLoading = $state(false);
 	async function proceed() {
@@ -13,9 +13,9 @@
 	}
 </script>
 
-<Card.Root class="mx-3 w-full ">
+<Card.Root class="w-full">
 	<Card.Header>
-		<Card.Title class="border-b border-dashed border-stone-500 text-purple-900 pb-2 font-bold"
+		<Card.Title class="border-b border-dashed border-stone-500 pb-2 font-bold text-purple-900"
 			>Step 1: Write</Card.Title
 		>
 		<Card.Description
@@ -34,7 +34,7 @@
 			{#if isLoading}
 				<LoaderCircle class="animate-spin" />
 			{:else}
-				<span class="material-symbols-outlined s16">arrow_forward_ios</span>
+				<ArrowRight class="size-4" aria-hidden="true" />
 			{/if}
 		</Button>
 	</Card.Content>

@@ -1,14 +1,13 @@
 <script lang="ts">
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Form from '$lib/components/ui/form';
-	import Button, { buttonVariants } from '$lib/components/ui/button/button.svelte';
+	import Button from '$lib/components/ui/button/button.svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import Input from '$lib/components/ui/input/input.svelte';
-	import { Label } from '$lib/components/ui/label';
 	import { type SuperValidated, superForm } from 'sveltekit-superforms';
 	import { zod4Client as zodClient } from 'sveltekit-superforms/adapters';
 	import { formSchema } from './schema';
 	import { postBulkList } from './service';
+	import { Plus, Tags, Trash2, Upload } from '@lucide/svelte';
 
 	interface Props {
 		data: {
@@ -54,88 +53,61 @@
 </script>
 
 <Dialog.Root open={dialogOpen} onOpenChange={handleDialogClose}>
-	<Button
-		variant="outline"
-		onclick={() => {
-			dialogOpen = true;
-		}}>Add A New Term</Button
-	>
-	<Dialog.Content class="sm:max-w-[425px]">
-		<Dialog.Header>
-			<Dialog.Title>Add a New Term</Dialog.Title>
-			<Dialog.Description>
-				Make changes to the gender neutral terms here. Click add when you're done.
-			</Dialog.Description>
+	<Button variant="outline" class="gap-2" onclick={() => (dialogOpen = true)}><Plus class="size-4" />Add term</Button>
+	<Dialog.Content class="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
+		<Dialog.Header class="border-b border-border px-6 py-5">
+			<div class="flex items-start gap-3">
+				<div class="rounded-xl bg-primary/10 p-2.5 text-primary"><Tags class="size-5" /></div>
+				<div class="space-y-1">
+					<Dialog.Title>Add language terms</Dialog.Title>
+					<Dialog.Description>Add a gender-neutral term and its alternatives to the shared library.</Dialog.Description>
+				</div>
+			</div>
 		</Dialog.Header>
-		<form method="POST" use:enhance>
+		<form method="POST" use:enhance class="min-h-0 space-y-5 overflow-y-auto px-6 py-5">
 			<Form.Field {form} name="term">
 				<Form.Control>
 					{#snippet children({ props })}
-						<Form.Label>Term</Form.Label>
-						<Input style="text-transform: lowercase;" {...props} bind:value={$formData.term} />
+						<Form.Label>Inclusive term</Form.Label>
+						<Input style="text-transform: lowercase;" placeholder="e.g. spokesperson" {...props} bind:value={$formData.term} />
 					{/snippet}
 				</Form.Control>
-				<Form.Description>Enter the gender-neutral term.</Form.Description>
+				<Form.Description>The term people should use instead.</Form.Description>
 				<Form.FieldErrors />
 			</Form.Field>
 			<Form.Field {form} name="alternatives">
 				<Form.Control>
 					{#snippet children({ props })}
 						<Form.Label>Alternatives</Form.Label>
-						<Input
-							style="text-transform: lowercase;"
-							{...props}
-							bind:value={$formData.alternatives}
-						/>
+						<Input style="text-transform: lowercase;" placeholder="Separate alternatives with commas" {...props} bind:value={$formData.alternatives} />
 					{/snippet}
 				</Form.Control>
-				<Form.Description>Enter alternative terms (comma-separated).</Form.Description>
+				<Form.Description>Add one or more alternatives, separated by commas.</Form.Description>
 				<Form.FieldErrors />
 			</Form.Field>
-			<Dialog.Footer>
-				<Form.Button>Add to list</Form.Button>
+			<Dialog.Footer class="border-t border-border pt-4">
+				<Form.Button class="w-full gap-2 sm:w-auto"><Plus class="size-4" />Add to batch</Form.Button>
 			</Dialog.Footer>
 		</form>
 
-		<!-- Display submitted entries -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		{#if submittedEntries.length > 0}
-			<div class="mt-4">
-				<h4 class="mb-2 font-medium">Added Terms:</h4>
-				<div class="max-h-32 space-y-2 overflow-y-auto">
-					{#each submittedEntries as entry, index}
-						<div class="flex items-center justify-between">
-							<div class="rounded bg-muted p-2 text-sm">
-								<div><strong>Term:</strong> {entry.term}</div>
-								<div><strong>Alternatives:</strong> {entry.alternatives}</div>
-							</div>
-							<Button
-								variant="destructive"
-								size="sm"
-								onclick={() => {
-									submittedEntries.splice(index, 1);
-								}}>delete</Button
-							>
-						</div>
-					{/each}
+			<div class="space-y-3 border-t border-border bg-muted/30 px-6 py-4">
+				<div class="flex items-center justify-between gap-2">
+					<h4 class="font-semibold">Ready to add</h4>
+					<span class="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">{submittedEntries.length} {submittedEntries.length === 1 ? 'term' : 'terms'}</span>
 				</div>
-			</div>
-			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-			<div
-				class="cursor-pointer rounded bg-blue-500 px-4 py-2 text-white"
-				onclick={() => {
-					postBulkList(submittedEntries);
-					dialogOpen = false;
-				}}
-				onkeydown={(e) => {
-					if (e.key === 'Enter' || e.key === ' ') {
-						e.preventDefault();
-						postBulkList(submittedEntries);
-						dialogOpen = false;
-					}
-				}}
-			>
-				Submit
+				<ul class="max-h-36 space-y-2 overflow-y-auto">
+					{#each submittedEntries as entry, index}
+						<li class="flex items-start justify-between gap-3 rounded-lg border border-border bg-card p-3">
+							<div class="min-w-0 space-y-1 text-sm">
+								<p class="font-semibold">{entry.term}</p>
+								<p class="break-words text-muted-foreground">{entry.alternatives}</p>
+							</div>
+							<Button variant="ghost" size="icon" class="size-8 shrink-0 text-destructive hover:text-destructive" aria-label="Remove {entry.term}" title="Remove term" onclick={() => submittedEntries.splice(index, 1)}><Trash2 class="size-4" /></Button>
+						</li>
+					{/each}
+				</ul>
+				<Button class="w-full gap-2" onclick={() => { postBulkList(submittedEntries); dialogOpen = false; }}><Upload class="size-4" />Add terms to library</Button>
 			</div>
 		{/if}
 	</Dialog.Content>

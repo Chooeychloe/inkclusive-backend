@@ -12,10 +12,10 @@
 </script>
 
 <div
-	class="w-full border-4 border-dashed border-transparent p-1 transition-all duration-100 ease-out hover:border-blue-500 hover:transition-all"
+	class="w-full border-2 border-dashed border-transparent p-1 transition-colors hover:border-primary/50"
 >
 	<Card.Root
-		class="flex w-full cursor-pointer flex-row items-center justify-center p-2 "
+		class="grid w-full cursor-pointer grid-cols-1 items-center gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_auto] sm:gap-4 sm:p-4"
 		onclick={() => {
 			$textContent = history.text;
 			$textContentHTML = history.htmlAsText;
@@ -23,29 +23,29 @@
 			goto('/dashboard/editor');
 		}}
 	>
-		<Card.Header class="flex w-full flex-row items-center justify-between gap-2 p-0">
-			<div>
-				<Card.Title class="mb-1">
+		<Card.Header class="min-w-0 p-0">
+			<div class="min-w-0">
+				<Card.Title class="mb-1 truncate">
 					{history.title}
 				</Card.Title>
 				<p
 					class={cn(
-						history.type == 'Grammar' && 'text-blue-300',
-						history.type == 'GFL' && 'text-violet-300',
-						'font-bold'
+						history.type == 'Grammar' && 'bg-sky-500/10 text-sky-700 dark:text-sky-300',
+						history.type == 'GFL' && 'bg-primary/10 text-primary',
+						'inline-flex rounded-full px-2 py-0.5 text-xs font-semibold'
 					)}
 				>
 					{history.type}
 				</p>
 			</div>
 		</Card.Header>
-		<Card.Content class="max-w-[500px] p-0">
-			<p class="line-clamp-1 text-justify text-base">
+		<Card.Content class="min-w-0 p-0">
+			<p class="line-clamp-2 text-left text-sm leading-5 text-muted-foreground">
 				{history.text}
 			</p>
 		</Card.Content>
-		<Card.Footer class="flex w-full items-center justify-end gap-5 p-0">
-			<p class="text-base text-muted-foreground">
+		<Card.Footer class="flex w-full items-center justify-between gap-3 p-0 sm:justify-end">
+			<p class="text-xs text-muted-foreground sm:text-sm">
 				{formatDistanceStrict(history.timestamp, new Date())} ago
 			</p>
 			<Button

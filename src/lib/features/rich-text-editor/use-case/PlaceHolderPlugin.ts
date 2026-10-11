@@ -6,8 +6,10 @@ function placeholder(placeholder:string) {
 		props: {
 			decorations(state) {
 				const textContent = state.doc.textContent;
+				const isSingleEmptyParagraph =
+					state.doc.childCount === 1 && state.doc.firstChild?.type.name === 'paragraph';
 
-				if (!textContent) {
+				if (!textContent && isSingleEmptyParagraph) {
 					// Decoration.widget adds the placeholder decoration
 					const decoration = Decoration.widget(0, () => {
 						const span = document.createElement("span");

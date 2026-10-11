@@ -16,6 +16,7 @@
 	import { waitStore } from '$lib/stores/waitStore';
 	import { getCount } from '../../services/countService';
 	import { countStore } from '$lib/stores/countStore';
+	import { ChevronDown, ChevronUp, Trash2 } from '@lucide/svelte';
 
 	let isCompact = $state<boolean>(false);
 	let {
@@ -168,21 +169,23 @@
 	}
 </script>
 
-<Card.Root class="my-3">
+<Card.Root class="my-2">
 	{#if !isCompact}
 		<Card.Header class="px-3 py-2">
 			<Card.Title
-				class="flex items-center justify-between border-b border-dashed border-stone-500 pb-2 text-base "
+				class="flex items-start justify-between gap-2 border-b border-dashed border-stone-500 pb-2 text-base"
 			>
-				<div class="flex items-center justify-center gap-2">
+				<div class="min-w-0 flex-1 text-left">
 					{suggestion.message}
 				</div>
 
 				<button
-					class="material-symbols-outlined s18 cursor-pointer select-none rounded-full border border-solid border-stone-500 p-1 text-stone-500 hover:bg-stone-500 hover:text-stone-50 hover:transition-all hover:ease-in-out"
+					class="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+					aria-label="Collapse suggestion"
+					title="Collapse suggestion"
 					onclick={() => (isCompact = true)}
 				>
-					collapse_content</button
+					<ChevronUp class="size-4" aria-hidden="true" /></button
 				>
 			</Card.Title>
 		</Card.Header>
@@ -236,7 +239,7 @@
 			<Button
 				variant="outline"
 				size="sm"
-				class="w-full text-base font-bold text-stone-500 "
+				class="w-full text-base font-bold text-muted-foreground "
 				disabled={isLoading}
 				onclick={() => {
 					if (suggestion.correctionType === 'gfl') {
@@ -266,19 +269,23 @@
 
 			<div class="flex items-center justify-center gap-1">
 				<button
-					class="material-symbols-outlined s18 cursor-pointer select-none rounded-full border border-solid border-red-500 bg-transparent p-1 text-red-500 hover:bg-red-500 hover:text-red-50 hover:transition-all hover:ease-in-out"
+					class="inline-flex size-8 items-center justify-center rounded-full border border-destructive text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground"
+					aria-label="Ignore suggestion"
+					title="Ignore suggestion"
 					disabled={isLoading}
 					onclick={() => {
 						if (suggestion.correctionType === 'gfl') {
 							$GLFScore += 1;
 						}
 						ignoreMe(index, suggestion.originalText);
-					}}>delete</button
+					}}><Trash2 class="size-4" aria-hidden="true" /></button
 				>
 				<button
-					class="material-symbols-outlined s18 cursor-pointer select-none rounded-full border border-solid border-stone-500 bg-transparent p-1 text-stone-500 hover:bg-stone-500 hover:text-stone-50 hover:transition-all hover:ease-in-out"
+					class="inline-flex size-8 items-center justify-center rounded-full border border-border bg-transparent text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+					aria-label="Expand suggestion"
+					title="Expand suggestion"
 					onclick={() => (isCompact = false)}
-					>expand_content
+					><ChevronDown class="size-4" aria-hidden="true" />
 				</button>
 			</div>
 		</Card.Content>

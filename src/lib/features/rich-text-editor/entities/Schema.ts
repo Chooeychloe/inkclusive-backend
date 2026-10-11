@@ -164,8 +164,23 @@ const mySchema2 = new Schema({
 
 const mySchema3 = mySchema2.spec.nodes.update('bullet_list', {
 	...mySchema2.spec.nodes.get('bullet_list'),
-	toDOM() {
-		return ['ul', { style: 'list-style-type: disc; padding-left: 20px;' }, 0];
+	attrs: {
+		listStyle: { default: 'disc' }
+	},
+	parseDOM: [
+		{
+			tag: 'ul',
+			getAttrs(dom) {
+				return { listStyle: (dom as HTMLElement).style.listStyleType || 'disc' };
+			}
+		}
+	],
+	toDOM(node) {
+		return [
+			'ul',
+			{ style: `list-style-type: ${node.attrs.listStyle}; padding-left: 20px;` },
+			0
+		];
 	}
 });
 const mySchema = new Schema({

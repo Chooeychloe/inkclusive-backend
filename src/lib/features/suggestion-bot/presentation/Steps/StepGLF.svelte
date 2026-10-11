@@ -13,6 +13,7 @@
 	import { signalTextEditor } from '$lib/stores/signalStore';
 	import { GLFScore } from '$lib/stores/omegaLOL';
 	import { waitStore } from '$lib/stores/waitStore';
+	import { ArrowRight, Languages, Pencil } from '@lucide/svelte';
 
 	// import { toast } from 'svelte-sonner';
 
@@ -86,7 +87,7 @@
 				}}
 			>
 				<p>Proceed</p>
-				<span class="material-symbols-outlined s16">arrow_forward_ios</span></Button
+				<ArrowRight class="size-4" aria-hidden="true" /></Button
 			>
 
 			<Button
@@ -98,7 +99,7 @@
 				}}
 			>
 				<p>Check Grammar</p>
-				<span class="material-symbols-outlined s26">abc</span>
+				<Languages class="size-5" aria-hidden="true" />
 			</Button>
 			<Button
 				class="flex w-full items-center  justify-between border border-green-500 bg-green-50  text-base font-bold text-green-500 hover:bg-green-500 hover:text-green-50"
@@ -109,7 +110,7 @@
 				}}
 				><p>Back To Step 1</p>
 
-				<span class="material-symbols-outlined s26">edit</span>
+				<Pencil class="size-5" aria-hidden="true" />
 			</Button>
 			<Button
 				class="w-full"
@@ -131,8 +132,8 @@
 			{/each}
 		{/key}
 	{:else}
-		<Skeleton class="my-2 h-32 w-full bg-stone-200	" />
-		<Skeleton class="my-2 h-32 w-full	bg-stone-200 " />
-		<Skeleton class="my-2 h-32 w-full	bg-stone-200" />
+		<Skeleton class="my-2 h-32 w-full bg-muted	" />
+		<Skeleton class="my-2 h-32 w-full	bg-muted " />
+		<Skeleton class="my-2 h-32 w-full	bg-muted" />
 	{/if}
 </ScrollArea>

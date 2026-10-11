@@ -21,6 +21,7 @@
 	import { afterNavigate } from '$app/navigation';
 	import { ignoreGrammarStore } from '$lib/stores/ignoreStore';
 	import { HistoryManager } from '../../../../routes/dashboard/history/historyManager';
+	import { Settings } from '@lucide/svelte';
 
 	let api = $state<CarouselAPI>();
 	let isSuggestionsTab = $state<boolean>(true);
@@ -121,13 +122,13 @@
 	}
 </script>
 
-<section class="step-4 h-full border-l border-stone-300 bg-stone-100 sm:w-full md:w-64 2xl:w-80">
+<section class="step-4 h-full border-l border-border bg-muted sm:w-full md:w-64 2xl:w-80">
 	{#if isSuggestionsTab}
 		<!-- Grammar & GLF Suggestion Module -->
 		<div
-			class="step-5 flex h-14 w-full items-center justify-between border-b border-solid border-stone-300 bg-stone-50 p-5"
+			class="step-5 flex h-14 w-full items-center justify-between gap-2 border-b border-solid border-border bg-card px-4"
 		>
-			<h2 class="text-xl text-purple-900 font-semibold">AI Companion</h2>
+			<h2 class="text-lg font-semibold text-purple-900 sm:text-xl">AI Companion</h2>
 
 			<Tooltip.Provider>
 				<Tooltip.Root>
@@ -135,9 +136,8 @@
 						class={buttonVariants({ variant: 'outline' })}
 						onclick={() => (isSuggestionsTab = !isSuggestionsTab)}
 					>
-						<span class="material-symbols-outlined s26 text-purple-900">settings</span
-						></Tooltip.Trigger
-					>
+						<Settings class="size-5 text-primary" aria-hidden="true" />
+					</Tooltip.Trigger>
 					<Tooltip.Content>
 						<p>Preference Settings</p>
 					</Tooltip.Content>
@@ -149,23 +149,23 @@
 			<StepInfographic></StepInfographic>
 
 			<Carousel.Root
-				class="w-[250px] 2xl:w-[300px]"
+				class="w-full max-w-[320px]"
 				setApi={(emblaApi) => (api = emblaApi)}
 				opts={{ dragFree: true, watchDrag: false }}
 			>
-				<Carousel.Content class="-ml-5">
-					<Carousel.Item class="px-5"
+				<Carousel.Content class="-ml-3">
+					<Carousel.Item class="px-3"
 						><StepWrite nextSlide={grammarPayload}></StepWrite></Carousel.Item
 					>
-					<Carousel.Item class=""
+					<Carousel.Item class="px-3"
 						><StepGrammar backToTheStart={backToTheStartModified} nextSlide={glfPayload}
 						></StepGrammar></Carousel.Item
 					>
-					<Carousel.Item
+					<Carousel.Item class="px-3"
 						><StepGLF backToTheStart={backToTheStartModified} {goBackToGrammar} {nextSlide}
 						></StepGLF></Carousel.Item
 					>
-					<Carousel.Item class="px-5"><Analytics {backToTheStart}></Analytics></Carousel.Item>
+					<Carousel.Item class="px-3"><Analytics {backToTheStart}></Analytics></Carousel.Item>
 				</Carousel.Content>
 			</Carousel.Root>
 		</div>

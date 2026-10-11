@@ -150,8 +150,8 @@
 	{:else if extractedText === false}
 		<form
 			class=" flex h-[350px] w-[250px] flex-col items-center justify-center
-		gap-5 rounded-sm border-2 border-dashed border-stone-300
-		bg-stone-50 p-5 lg:h-[450px] lg:w-[450px]"
+		gap-5 rounded-sm border-2 border-dashed border-border
+		bg-card p-5 lg:h-[450px] lg:w-[450px]"
 			ondrop={async (e) => {
 				$textContent = '';
 				$textContentHTML = '';

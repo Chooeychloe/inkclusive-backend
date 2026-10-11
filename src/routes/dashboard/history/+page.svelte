@@ -22,14 +22,14 @@
 </script>
 
 <div
-	class="flex h-[100svh] min-h-0 w-full flex-col items-center overflow-y-scroll bg-stone-200 lg:flex-1"
+	class="flex h-[100svh] min-h-0 w-full flex-col items-center bg-muted lg:flex-1"
 >
 	<div
-		class=" flex h-14 w-full items-center justify-between border-b border-stone-300 bg-stone-50 p-2"
+		class="flex h-14 w-full shrink-0 items-center justify-between border-b border-border bg-card px-4"
 	>
 		<h2 class="text-xl font-semibold">History</h2>
 	</div>
-	<div class="flex w-full items-center justify-end gap-5 p-5">
+	<div class="flex w-full max-w-5xl shrink-0 items-center justify-end gap-3 px-4 py-4 sm:px-6">
 		<Button
 			variant="destructive"
 			onclick={async () => {
@@ -41,14 +41,14 @@
 
 	{#key history}
 		{#if history.length == 0}
-			<div class="flex h-full w-full flex-wrap items-center justify-center gap-2 px-5">
+			<div class="flex min-h-0 w-full flex-1 flex-wrap items-center justify-center gap-2 px-5">
 				<h3 class="mb-10 scroll-m-20 text-2xl font-semibold tracking-tight text-muted-foreground">
 					EMPTY
 				</h3>
 			</div>
 		{:else}
-			<ScrollArea class="h-[580px] w-full">
-				<div class="flex w-full flex-col flex-wrap items-center justify-start">
+			<ScrollArea class="min-h-0 w-full max-w-5xl flex-1 px-4 sm:px-6">
+				<div class="flex w-full flex-col items-center justify-start gap-3 pb-4">
 					{#each history as item}
 						<HistoryCard history={item} {deleteFunc}></HistoryCard>
 					{/each}

@@ -9,6 +9,7 @@
 	import { aiSuggestions, replaceStore } from '$lib/stores/lintingStore';
 	import { ignoreGrammarStore } from '$lib/stores/ignoreStore';
 	import { page } from '$app/state';
+	import { ModeWatcher } from 'mode-watcher';
 	beforeNavigate(({ cancel }) => {
 		if (page.url.pathname == '/dashboard/editor' || page.url.pathname == '/dashboard/scan') {
 			if ($textContent == '') return;
@@ -30,5 +31,6 @@
 	});
 </script>
 
+<ModeWatcher />
 <Toaster richColors position="top-center"></Toaster>
 {@render children()}

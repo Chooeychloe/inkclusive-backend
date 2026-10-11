@@ -203,6 +203,7 @@
 			dispatchTransaction(transaction) {
 				const newState = view!.state.apply(transaction);
 				view!.updateState(newState);
+				view!.dom.dispatchEvent(new Event('inkclusive:selectionchange'));
 				$textContent = newState.doc.textContent.toString();
 				const fragment = DOMSerializer.fromSchema(mySchema).serializeFragment(newState.doc.content);
 				const div = document.createElement('div');
@@ -218,32 +219,33 @@
 	});
 </script>
 
-<section class="flex min-h-[100svh] flex-1 flex-col items-center bg-stone-50 xl:h-full">
+<section class="flex min-h-[100svh] flex-1 flex-col items-center bg-card xl:h-full">
 	<!-- Custom toolbar with Chadcn Svelte buttons -->
 	<div
-		class="step-3 flex h-14 max-h-14 w-full items-center justify-between border-b border-stone-300 bg-stone-50 p-2"
+		class="step-3 flex min-h-14 w-full shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-border bg-card px-3 py-2 sm:px-4 lg:flex-nowrap"
 	>
 		<input
 			type="text"
-			class="w-24 text-ellipsis whitespace-nowrap bg-stone-50 text-xl font-semibold focus:outline-none"
+			class="order-1 w-28 min-w-0 shrink-0 text-ellipsis whitespace-nowrap bg-card px-1 text-base font-semibold focus:outline-none sm:w-40 sm:text-lg"
 			bind:value={$textTitle}
 			onblur={resetScroll}
 		/>
-		{#if view !== null}
-			<ToolBar {view} {mySchema}></ToolBar>
-		{/if}
-
-		<div>
-			<p class="text-xs text-muted-foreground lg:text-sm">
+		<div class="order-2 ml-auto shrink-0 pl-1 lg:order-3 lg:ml-0">
+			<p class="whitespace-nowrap text-xs text-muted-foreground lg:text-sm">
 				Count: {$textContent == '' ? 0 : $textContent.trim().split(/\s+/).length}
 			</p>
 		</div>
+		{#if view !== null}
+			<div class="order-3 basis-full lg:order-2 lg:basis-auto lg:flex-1">
+				<ToolBar {view} {mySchema}></ToolBar>
+			</div>
+		{/if}
 	</div>
 
 	<!-- ProseMirror editor container -->
 
 	<ScrollArea
-		class="step-2 max-h-[400px] w-full flex-1 shadow-inner lg:max-h-[600px] xl:max-h-[800px]"
+		class="step-2 min-h-0 max-h-[400px] w-full flex-1 shadow-inner lg:max-h-[600px] xl:max-h-[800px]"
 		onclick={() => {
 			if ($progressStore > 0) {
 				toast.info('You can only edit text during the Write Step');
@@ -254,7 +256,7 @@
 			<div
 				bind:this={editorContainer}
 				class={cn(
-					'editor__paragraph prose prose-sm w-full flex-1 text-stone-800 lg:prose-base xl:prose-lg',
+					'editor__paragraph prose prose-sm w-full flex-1 text-foreground lg:prose-base xl:prose-lg',
 					$progressStore > 0 && 'pointer-events-none'
 				)}
 				id="editor"
@@ -265,9 +267,9 @@
 
 <style>
 	#editor {
-		padding: 10px 10px;
+		padding: 1.25rem 1rem;
 		width: 100%;
-		max-width: 900px; /* Optional: prevent overflow */
+		max-width: 900px;
 		/*background: antiquewhite;*/
 	}
 </style>

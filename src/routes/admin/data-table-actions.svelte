@@ -1,6 +1,6 @@
 <script lang="ts">
-	import EllipsisIcon from '@lucide/svelte/icons/ellipsis';
-	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
+	import { Ellipsis, Pencil, Save, Trash2, TriangleAlert } from '@lucide/svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import type { TGenderTermProcessed } from './column';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
@@ -51,7 +51,7 @@
 		{#snippet child({ props })}
 			<Button {...props} variant="ghost" size="icon" class="relative size-8 p-0">
 				<span class="sr-only">Open menu</span>
-				<EllipsisIcon />
+				<Ellipsis />
 			</Button>
 		{/snippet}
 	</DropdownMenu.Trigger>
@@ -66,7 +66,7 @@
 					openEditDialog();
 				}}
 			>
-				Edit Term
+				<Pencil class="mr-2 size-4" />Edit term
 			</DropdownMenu.Item>
 
 			<!-- Delete Dialog -->
@@ -76,7 +76,7 @@
 					openDeleteDialog();
 				}}
 			>
-				Delete
+				<Trash2 class="mr-2 size-4" />Delete term
 			</DropdownMenu.Item>
 		</DropdownMenu.Group>
 	</DropdownMenu.Content>
@@ -84,33 +84,31 @@
 
 <!-- Edit Dialog (outside dropdown) -->
 <Dialog.Root bind:open={editDialogOpen} onOpenChange={handleEditDialogClose}>
-	<Dialog.Content class="sm:max-w-[425px]">
-		<Dialog.Header>
-			<Dialog.Title>Edit Term</Dialog.Title>
-			<Dialog.Description>
-				Make changes to the term here. Click save when you're done.
-			</Dialog.Description>
+	<Dialog.Content class="max-h-[90dvh] overflow-y-auto p-0 sm:max-w-lg">
+		<Dialog.Header class="border-b border-border px-6 py-5">
+			<Dialog.Title>Edit term</Dialog.Title>
+			<Dialog.Description>Update the alternatives suggested for <strong>{term.term}</strong>.</Dialog.Description>
 		</Dialog.Header>
-		<div class="grid gap-4 py-4">
-			<div class="grid grid-cols-4 items-center gap-4">
-				<Label for="username" class="text-right">Alternative</Label>
+		<div class="grid gap-2 px-6 py-5">
+			<div class="grid gap-2">
+				<Label for="term-alternatives">Alternatives</Label>
 				<Input
 					style="text-transform: lowercase;"
-					id="username"
+					id="term-alternatives"
 					value={term.alternatives}
 					onchange={(e: Event) => handleChange(e)}
-					class="col-span-3"
+					class="w-full"
 				/>
 			</div>
-			<p class="text-sm text-muted-foreground">Enter alternative terms (comma-separated).</p>
+			<p class="text-sm leading-5 text-muted-foreground">Separate multiple alternatives with commas.</p>
 		</div>
-		<Dialog.Footer>
+		<Dialog.Footer class="border-t border-border bg-muted/30 px-6 py-4">
 			<Button
 				type="submit"
 				disabled={false}
 				onclick={async () => {
 					await putList(term.term, optionsResponse);
-				}}>Save changes</Button
+				}}><Save class="mr-2 size-4" />Save changes</Button
 			>
 		</Dialog.Footer>
 	</Dialog.Content>
@@ -118,20 +116,24 @@
 
 <!-- Delete Dialog (outside dropdown) -->
 <Dialog.Root bind:open={deleteDialogOpen} onOpenChange={handleDeleteDialogClose}>
-	<Dialog.Content>
+	<Dialog.Content class="sm:max-w-md">
 		<Dialog.Header>
-			<Dialog.Title>Are you absolutely sure?</Dialog.Title>
+			<div class="flex items-start gap-3">
+				<div class="rounded-full bg-destructive/10 p-2 text-destructive"><TriangleAlert class="size-5" /></div>
+				<div class="space-y-1"><Dialog.Title>Delete this term?</Dialog.Title>
 			<Dialog.Description>
-				This action cannot be undone. This will permanently delete the term and it's alternative.
+				This permanently removes <strong>{term.term}</strong> and its alternatives from the library.
 			</Dialog.Description>
+				</div>
+			</div>
 		</Dialog.Header>
-		<Dialog.Footer>
+		<Dialog.Footer class="mt-2 gap-2">
 			<Button
 				variant="destructive"
 				onclick={() => {
 					deleteDialogOpen = false;
 					deleteListItem(term.term);
-				}}>Delete</Button
+				}}><Trash2 class="mr-2 size-4" />Delete term</Button
 			>
 			<Button
 				variant="outline"

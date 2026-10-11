@@ -7,6 +7,7 @@
 	import { textContent } from '$lib/stores/textFromEditorStore';
 	import ScrollArea from '$lib/components/ui/scroll-area/scroll-area.svelte';
 	import { countStore } from '$lib/stores/countStore';
+	import { RotateCcw } from '@lucide/svelte';
 
 	let { backToTheStart }: { backToTheStart: () => void } = $props();
 
@@ -84,10 +85,10 @@
 	<Button
 		variant="outline"
 		onclick={backToTheStart}
-		class="my-2  flex w-full items-center border-purple-500 bg-blue-50 p-6 text-base font-bold text-purple-500 hover:bg-purple-500 hover:text-purple-50"
+		class="my-2  flex w-full items-center border-purple-500 bg-primary/10 p-6 text-base font-bold text-purple-500 hover:bg-purple-500 hover:text-purple-50"
 		><p>Start All Over Again</p>
 
-		<span class="material-symbols-outlined s26">restart_alt</span>
+		<RotateCcw class="size-5" aria-hidden="true" />
 	</Button>
 	<ExportButton></ExportButton>
 </ScrollArea>
