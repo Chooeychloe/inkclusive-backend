@@ -9,6 +9,9 @@ import { Checkbox } from '$lib/components/ui/checkbox/index.js';
 export type TGenderTermProcessed = {
 	term: string;
 	alternatives: string;
+	category: string;
+	guidance: string;
+	examples: string;
 };
 export const columns: ColumnDef<TGenderTermProcessed>[] = [
 	{
@@ -41,6 +44,8 @@ export const columns: ColumnDef<TGenderTermProcessed>[] = [
 		accessorKey: 'alternatives',
 		header: 'Alternatives'
 	},
+	{ accessorKey: 'category', header: 'Category' },
+	{ accessorKey: 'guidance', header: 'Usage guidance' },
 	{
 		id: 'actions',
 		cell: ({ row }) => {

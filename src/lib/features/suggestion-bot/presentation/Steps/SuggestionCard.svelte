@@ -62,6 +62,9 @@
 							original_text: string;
 							message: string;
 							replacements: string[];
+							category?: string;
+							rule_id?: string;
+							examples?: string[];
 						}) => ({
 							indexReplacement: correction.word_index,
 							originalText: correction.original_text,
@@ -71,7 +74,9 @@
 							correctionType: 'grammar',
 							chosenReplacement: '',
 							message: correction.message,
-							rational: ''
+							rationale: correction.message,
+							category: correction.category,
+							ruleId: correction.rule_id
 						})
 					);
 					const filteredSuggestions = await (
@@ -138,17 +143,24 @@
 							character_endset: number;
 							original_text: string;
 							message: string;
-							replacements: string[];
+							replacements: string[] | string;
+							rationale?: string;
+							category?: string;
+							rule_id?: string;
+							examples?: string[];
 						}) => ({
 							indexReplacement: correction.word_index,
 							originalText: correction.original_text,
 							offSet: correction.character_offset,
 							endSet: correction.character_endset,
-							replacements: [...correction.replacements],
+							replacements: Array.isArray(correction.replacements) ? correction.replacements : [correction.replacements],
 							correctionType: 'gfl',
 							chosenReplacement: '',
-							message: 'Gender Fair Language',
-							rational: 'Gender Fair Language'
+							message: correction.message || 'Consider a gender-neutral alternative',
+							rationale: correction.rationale || '',
+							category: correction.category || 'Gender-fair language',
+							ruleId: correction.rule_id,
+							examples: correction.examples
 						})
 					);
 
@@ -194,6 +206,14 @@
 				<span class="font-bold text-red-500">Original:&nbsp;</span>
 				{suggestion.originalText}
 			</p>
+			{#if suggestion.rationale || suggestion.ruleId}
+				<div class="my-3 rounded-lg border border-border bg-muted/40 p-3 text-sm">
+					<p class="font-semibold text-foreground">Why this was suggested</p>
+					{#if suggestion.rationale}<p class="mt-1 leading-5 text-muted-foreground">{suggestion.rationale}</p>{/if}
+					{#if suggestion.category || suggestion.ruleId}<p class="mt-2 text-xs text-muted-foreground">{suggestion.category}{suggestion.category && suggestion.ruleId ? ' · ' : ''}{suggestion.ruleId}</p>{/if}
+					{#if suggestion.examples?.length}<p class="mt-2 text-xs text-muted-foreground">Examples: {suggestion.examples.join(' · ')}</p>{/if}
+				</div>
+			{/if}
 			<p class="my-3 text-sm">
 				<span class="font-bold text-blue-500">Revision:&nbsp;</span>
 			</p>

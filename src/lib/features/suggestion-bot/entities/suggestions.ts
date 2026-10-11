@@ -8,4 +8,7 @@ export type TSuggestion = {
 	correctionType: 'grammar' | 'spelling' | 'gfl';
 	message: string;
 	rationale: string;
+	category?: string;
+	ruleId?: string;
+	examples?: string[];
 };

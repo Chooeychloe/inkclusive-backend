@@ -28,11 +28,12 @@
 	import type { PageData } from './$types.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import AddTermForm from './AddTermForm.svelte';
+	import TermLibraryTransfer from './TermLibraryTransfer.svelte';
 
 	import AdminNavbar from './AdminNavbar.svelte';
 
 	import { columns, type TGenderTermProcessed } from './column';
-	import { bulkDeleteListItem, getList } from './service.js';
+	import { bulkDeleteListItem, getTermRecords } from './service.js';
 	import { listStore, refreshStore } from '$lib/stores/refreshStore.js';
 	import { Toaster } from 'svelte-sonner';
 
@@ -112,16 +113,11 @@
 			burger = [];
 			burger2 = [];
 			$listStore = [];
-			const list = await getList();
-			if (!list) return;
-
-			for (const [key, value] of Object.entries(list)) {
-				burger2.push({ term: key, alternatives: value.toLocaleString() });
-			}
+			const records = await getTermRecords();
+			for (const entry of records) burger2.push({ term: entry.term, alternatives: entry.options.join(', '), category: entry.category || 'Other', guidance: entry.guidance || '', examples: (entry.examples || []).join('; ') });
 
 			burger = [...burger2];
 			$listStore = [...burger2];
-			console.log($listStore);
 		} catch (error) {
 			console.error('Error loading data:', error);
 			loadError = 'We could not load the term library. Check the backend connection and try again.';
@@ -324,7 +320,8 @@
 						class="w-full sm:w-64"
 						disabled={isLoading}
 					/>
-					<AddTermForm {data}></AddTermForm>
+						<AddTermForm {data}></AddTermForm>
+						<TermLibraryTransfer />
 						</div>
 				</div>
 				{#if loadError}

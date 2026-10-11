@@ -8,6 +8,17 @@ import { env } from '$env/dynamic/public';
 const url = env.PUBLIC_BACKEND_URL || 'NOTHING';
 
 type TermsResponse = { [key: string]: string[] };
+export type TermRecord = { term: string; options: string[]; category?: string; guidance?: string; examples?: string[] };
+
+export async function getTermRecords(): Promise<TermRecord[]> {
+	const response = await fetch(url + 'terms/records', { headers: { 'Content-Type': 'application/json' } });
+	if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+	return await response.json() as TermRecord[];
+}
+
+function toPayload(request: TGenderTermProcessed): TermRecord {
+	return { term: request.term.trim(), options: request.alternatives.split(',').map(x => x.trim()).filter(Boolean), category: request.category || 'Other', guidance: request.guidance || '', examples: (request.examples || '').split(';').map(x => x.trim()).filter(Boolean) };
+}
 
 export async function getList(): Promise<TermsResponse> {
 	console.log(url);
@@ -47,7 +58,7 @@ async function postList(request: TGenderTermProcessed) {
 		headers: {
 			'Content-Type': 'application/json'
 		},
-		body: JSON.stringify({ term: request.term, options: request.alternatives.split(',') })
+		body: JSON.stringify(toPayload(request))
 	});
 
 	if (!response.ok) {
@@ -58,8 +69,9 @@ async function postList(request: TGenderTermProcessed) {
 }
 export async function postBulkList(request: TGenderTermProcessed[]) {
 	try {
-		const results = await Promise.all(request.map(postList));
-		console.log('✅ Bulk submission results:', results);
+		const response = await fetch(url + 'terms/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ terms: request.map(toPayload) }) });
+		if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+		console.log('Bulk submission completed:', request.length);
 
 		toast.success('Submission Added');
 		refreshStore.set(get(refreshStore) + 1);
@@ -69,14 +81,14 @@ export async function postBulkList(request: TGenderTermProcessed[]) {
 	}
 }
 
-export async function putList(term: string, options: string): Promise<TermsResponse> {
+export async function putList(term: string, options: string, category = 'Other', guidance = '', examples = ''): Promise<TermsResponse> {
 	const sanitizedOptions = options.split(',');
 	const response = await fetch(url + 'terms/' + term, {
 		method: 'PUT',
 		headers: {
 			'Content-Type': 'application/json'
 		},
-		body: JSON.stringify({ options: sanitizedOptions })
+		body: JSON.stringify({ options: sanitizedOptions.map(x => x.trim()).filter(Boolean), category, guidance, examples: examples.split(';').map(x => x.trim()).filter(Boolean) })
 	});
 	if (!response.ok) {
 		toast.error('Error Occured Please Check Logs');

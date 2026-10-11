@@ -39,16 +39,21 @@ export async function grammarCheckService(nextSlide: () => void) {
 					original_text: string;
 					message: string;
 					replacements: string[];
+					category?: string;
+					rule_id?: string;
+					examples?: string[];
 				}) => ({
 					indexReplacement: correction.word_index,
 					originalText: correction.original_text,
 					offSet: correction.character_offset,
 					endSet: correction.character_endset,
-					replacements: [...correction.replacements],
+					replacements: Array.isArray(correction.replacements) ? correction.replacements : [],
 					correctionType: 'grammar',
 					chosenReplacement: '',
 					message: correction.message,
-					rational: ''
+					rationale: correction.message,
+					category: correction.category,
+					ruleId: correction.rule_id
 				})
 			);
 
@@ -128,16 +133,23 @@ export async function glfCheckService(nextSlide: () => void) {
 					original_text: string;
 					message: string;
 					replacements: string[] | string;
+					rationale?: string;
+					category?: string;
+					rule_id?: string;
+					examples?: string[];
 				}) => ({
 					indexReplacement: correction.word_index,
 					originalText: correction.original_text,
 					offSet: correction.character_offset,
 					endSet: correction.character_endset,
-					replacements: [...correction.replacements],
+					replacements: Array.isArray(correction.replacements) ? correction.replacements : [correction.replacements],
 					correctionType: 'gfl',
 					chosenReplacement: '',
-					message: 'Gender Fair Language',
-					rational: ''
+					message: correction.message || 'Consider a gender-neutral alternative',
+					rationale: correction.rationale || '',
+					category: correction.category || 'Gender-fair language',
+					ruleId: correction.rule_id,
+					examples: correction.examples
 				})
 			);
 			aiSuggestions.set(await suggestions);

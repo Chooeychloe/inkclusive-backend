@@ -16,8 +16,16 @@
 	let deleteDialogOpen = $state(false);
 
 	let optionsResponse = $state('');
+	let categoryResponse = $state(term.category || 'Other');
+	let guidanceResponse = $state(term.guidance || '');
+	let examplesResponse = $state(term.examples || '');
+	let isSaving = $state(false);
 	// Function to handle dialog open while keeping dropdown open
 	function openEditDialog() {
+		optionsResponse = term.alternatives;
+		categoryResponse = term.category || 'Other';
+		guidanceResponse = term.guidance || '';
+		examplesResponse = term.examples || '';
 		editDialogOpen = true;
 		// Keep dropdown open when dialog opens
 		dropdownOpen = true;
@@ -40,10 +48,6 @@
 		dropdownOpen = false;
 	}
 
-	function handleChange(event: Event) {
-		const target = event.currentTarget as HTMLInputElement;
-		optionsResponse = target.value;
-	}
 </script>
 
 <DropdownMenu.Root bind:open={dropdownOpen}>
@@ -84,31 +88,31 @@
 
 <!-- Edit Dialog (outside dropdown) -->
 <Dialog.Root bind:open={editDialogOpen} onOpenChange={handleEditDialogClose}>
-	<Dialog.Content class="max-h-[90dvh] overflow-y-auto p-0 sm:max-w-lg">
-		<Dialog.Header class="border-b border-border px-6 py-5">
-			<Dialog.Title>Edit term</Dialog.Title>
-			<Dialog.Description>Update the alternatives suggested for <strong>{term.term}</strong>.</Dialog.Description>
+	<Dialog.Content class="flex max-h-[min(92dvh,760px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
+		<Dialog.Header class="shrink-0 border-b border-border bg-muted/20 px-5 py-5 pr-12 sm:px-7">
+			<div class="flex items-start gap-3"><div class="rounded-xl bg-primary/10 p-2.5 text-primary"><Pencil class="size-5" /></div><div class="space-y-1"><Dialog.Title class="text-lg">Edit term</Dialog.Title><Dialog.Description>Update the term details used in suggestions and matching.</Dialog.Description></div></div>
 		</Dialog.Header>
-		<div class="grid gap-2 px-6 py-5">
-			<div class="grid gap-2">
-				<Label for="term-alternatives">Alternatives</Label>
-				<Input
-					style="text-transform: lowercase;"
-					id="term-alternatives"
-					value={term.alternatives}
-					onchange={(e: Event) => handleChange(e)}
-					class="w-full"
-				/>
+		<div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-7">
+			<div class="rounded-lg border border-border bg-muted/30 px-4 py-3"><p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Term being managed</p><p class="mt-1 break-words font-semibold">{term.term}</p></div>
+			<div class="grid gap-5 sm:grid-cols-2">
+				<div class="grid gap-2"><Label for="term-alternatives">Suggested alternatives</Label><Input id="term-alternatives" bind:value={optionsResponse} placeholder="Separate alternatives with commas" /><p class="text-xs text-muted-foreground">Separate options with commas.</p></div>
+				<div class="grid gap-2"><Label for="term-category">Category</Label><Input id="term-category" bind:value={categoryResponse} placeholder="e.g. Job title" /></div>
 			</div>
-			<p class="text-sm leading-5 text-muted-foreground">Separate multiple alternatives with commas.</p>
+			<div class="grid gap-5 sm:grid-cols-2">
+				<div class="grid gap-2"><Label for="term-guidance">Suggestion guidance <span class="font-normal text-muted-foreground">(optional)</span></Label><textarea id="term-guidance" bind:value={guidanceResponse} class="min-h-28 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring" placeholder="Explain why this wording may need review." /></div>
+				<div class="grid gap-2"><Label for="term-examples">Example phrases <span class="font-normal text-muted-foreground">(optional)</span></Label><textarea id="term-examples" bind:value={examplesResponse} class="min-h-28 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring" placeholder="Separate examples with semicolons." /></div>
+			</div>
 		</div>
-		<Dialog.Footer class="border-t border-border bg-muted/30 px-6 py-4">
+		<Dialog.Footer class="shrink-0 border-t border-border bg-muted/30 px-5 py-4 sm:px-7">
+			<Button type="button" variant="outline" onclick={handleEditDialogClose}>Cancel</Button>
 			<Button
-				type="submit"
-				disabled={false}
+				type="button"
+				disabled={isSaving || !optionsResponse.trim() || !categoryResponse.trim()}
 				onclick={async () => {
-					await putList(term.term, optionsResponse);
-				}}><Save class="mr-2 size-4" />Save changes</Button
+					isSaving = true;
+					try { await putList(term.term, optionsResponse, categoryResponse, guidanceResponse, examplesResponse); handleEditDialogClose(); }
+					finally { isSaving = false; }
+				}}><Save class="mr-2 size-4" />{isSaving ? 'Saving…' : 'Save changes'}</Button
 			>
 		</Dialog.Footer>
 	</Dialog.Content>
