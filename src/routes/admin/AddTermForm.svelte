@@ -92,7 +92,17 @@
 						{#snippet children({ props })}
 							<Form.Label>Category</Form.Label>
 							<select class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" {...props} bind:value={$formData.category}>
-								<option>Other</option><option>Job title</option><option>Pronoun</option><option>Relationship</option><option>Age</option><option>Disability</option><option>Identity</option>
+								<option>Other</option>
+								<option>Occupation &amp; role</option>
+								<option>Collective language</option>
+								<option>Education</option>
+								<option>Family &amp; relationships</option>
+								<option>Gendered reference</option>
+								<option>Public facilities</option>
+								<option>Sexual orientation</option>
+								<option>Titles &amp; status</option>
+								<option>Potentially stigmatizing wording</option>
+								<option>Pronoun</option><option>Age</option><option>Disability</option><option>Identity</option>
 							</select>
 						{/snippet}
 					</Form.Control>

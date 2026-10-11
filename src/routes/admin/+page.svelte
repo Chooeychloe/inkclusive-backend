@@ -10,7 +10,7 @@
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
-	import { AlertTriangle, BookText, FileText, HandHeart, KeyRound, ShieldCheck, Trash2 } from '@lucide/svelte';
+	import { AlertTriangle, BookText, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, EyeOff, FileText, HandHeart, KeyRound, Search, ShieldCheck, Trash2, X } from '@lucide/svelte';
 
 	import {
 		type SortingState,
@@ -40,6 +40,7 @@
 	// Admin authentication state
 	let showPasswordDialog = $state(true);
 	let adminPassword = $state('');
+	let showAdminPassword = $state(false);
 	let authError = $state('');
 	let isAuthenticated = $state(false);
 	let isAuthLoading = $state(false);
@@ -48,6 +49,7 @@
 	let burger2 = $state<TGenderTermProcessed[]>([]);
 	let sorting = $state<SortingState>([]);
 	let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 10 });
+	let globalFilter = $state('');
 	let columnFilters = $state<ColumnFiltersState>([]);
 	let rowSelection = $state<RowSelectionState>({});
 
@@ -61,6 +63,15 @@
 	// Derived state for submit button
 	let isSubmitDisabled = $derived(isAuthLoading || !adminPassword.trim());
 
+	function normalizeSearchText(value: string): string {
+		return value.normalize('NFKD').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+	}
+
+	function updateSearch(value: string): void {
+		globalFilter = value;
+		table.setPageIndex(0);
+	}
+
 	async function verifyAdminPassword(): Promise<void> {
 		if (!adminPassword.trim()) {
 			authError = 'Password is required';
@@ -71,7 +82,7 @@
 		authError = '';
 
 		try {
-			const response = await fetch('/api/verify', {
+			const response = await fetch('/api/admin/login', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -79,17 +90,18 @@
 				body: JSON.stringify({ password: adminPassword })
 			});
 
-			const result: { success: boolean } = await response.json();
-
-			if (result.success) {
-				isAuthenticated = true;
-				showPasswordDialog = false;
-			} else {
-				authError = 'Invalid password';
+			const result = await response.json().catch(() => ({}));
+			if (!response.ok) {
+				authError = result.detail || 'Admin sign-in failed. Please try again.';
 				adminPassword = '';
+				return;
 			}
+			isAuthenticated = true;
+			showPasswordDialog = false;
+			adminPassword = '';
+			await loadEverything();
 		} catch (err) {
-			authError = 'Authentication failed. Please try again.';
+			authError = err instanceof Error ? err.message : 'Authentication failed. Please try again.';
 		} finally {
 			isAuthLoading = false;
 		}
@@ -105,6 +117,12 @@
 		}
 	}
 
+	function applyRecords(records: Awaited<ReturnType<typeof getTermRecords>>) {
+		burger2 = records.map((entry) => ({ term: entry.term, alternatives: entry.options.join(', '), category: entry.category || 'Other', guidance: entry.guidance || '', examples: (entry.examples || []).join('; ') }));
+		burger = [...burger2];
+		$listStore = [...burger2];
+	}
+
 	async function loadEverything() {
 		try {
 			isLoading = true;
@@ -113,10 +131,7 @@
 			burger2 = [];
 			$listStore = [];
 			const records = await getTermRecords();
-			for (const entry of records) burger2.push({ term: entry.term, alternatives: entry.options.join(', '), category: entry.category || 'Other', guidance: entry.guidance || '', examples: (entry.examples || []).join('; ') });
-
-			burger = [...burger2];
-			$listStore = [...burger2];
+			applyRecords(records);
 		} catch (error) {
 			console.error('Error loading data:', error);
 			loadError = 'We could not load the term library. Check the backend connection and try again.';
@@ -125,10 +140,16 @@
 		}
 	}
 
-	onMount(() => {
-		// Only load data if authenticated
-		if (isAuthenticated) {
-			loadEverything();
+	onMount(async () => {
+		try {
+			const records = await getTermRecords();
+			applyRecords(records);
+			isAuthenticated = true;
+			showPasswordDialog = false;
+		} catch {
+			// No valid secure admin cookie yet; leave the sign-in dialog open.
+		} finally {
+			isLoading = false;
 		}
 	});
 
@@ -138,12 +159,14 @@
 		}
 	});
 
-	// Load data when authenticated
-	$effect(() => {
-		if (isAuthenticated) {
-			loadEverything();
-		}
-	});
+	async function logoutAdmin() {
+		await fetch('/api/admin/logout', { method: 'POST' });
+		isAuthenticated = false;
+		showPasswordDialog = true;
+		burger = [];
+		burger2 = [];
+		$listStore = [];
+	}
 
 	const table = createSvelteTable({
 		get data() {
@@ -154,6 +177,18 @@
 		getPaginationRowModel: getPaginationRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
+		globalFilterFn: (row, _columnId, filterValue) => {
+			const query = normalizeSearchText(String(filterValue ?? ''));
+			if (!query) return true;
+			const haystack = normalizeSearchText([
+				row.original.term,
+				row.original.alternatives,
+				row.original.category,
+				row.original.guidance,
+				row.original.examples
+			].join(' '));
+			return query.split(/\s+/).every((word) => haystack.includes(word));
+		},
 		onSortingChange: (updater) => {
 			if (typeof updater === 'function') {
 				sorting = updater(sorting);
@@ -175,6 +210,9 @@
 				columnFilters = updater;
 			}
 		},
+		onGlobalFilterChange: (updater) => {
+			globalFilter = typeof updater === 'function' ? updater(globalFilter) : updater;
+		},
 		onRowSelectionChange: (updater) => {
 			if (typeof updater === 'function') {
 				rowSelection = updater(rowSelection);
@@ -192,10 +230,23 @@
 			get columnFilters() {
 				return columnFilters;
 			},
+			get globalFilter() {
+				return globalFilter;
+			},
 			get rowSelection() {
 				return rowSelection;
 			}
 		}
+	});
+
+	let pageWindow = $derived.by(() => {
+		const count = Math.max(1, table.getPageCount());
+		if (count <= 5) return { count, start: 0, end: count, middle: [] as number[] };
+		const current = table.getState().pagination.pageIndex;
+		let start = Math.max(1, Math.min(current - 1, count - 4));
+		let end = Math.min(count - 1, start + 3);
+		start = Math.max(1, end - 3);
+		return { count, start, end, middle: Array.from({ length: end - start }, (_, index) => start + index) };
 	});
 
 	let { data }: { data: PageData } = $props();
@@ -227,15 +278,21 @@
 
 		<div class="space-y-2 py-2">
 			<label for="admin-password" class="text-sm font-medium">Password</label>
-			<Input
-				id="admin-password"
-				type="password"
-				placeholder="Enter your password"
-				bind:value={adminPassword}
-				onkeypress={handleAuthKeyPress}
-				disabled={isAuthLoading}
-				class="mb-2"
-			/>
+			<div class="relative">
+				<Input
+					id="admin-password"
+					type={showAdminPassword ? 'text' : 'password'}
+					autocomplete="current-password"
+					placeholder="Enter your password"
+					bind:value={adminPassword}
+					onkeypress={handleAuthKeyPress}
+					disabled={isAuthLoading}
+					class="mb-2 pr-11"
+				/>
+				<button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={showAdminPassword ? 'Hide password' : 'Show password'} title={showAdminPassword ? 'Hide password' : 'Show password'} aria-pressed={showAdminPassword} onclick={() => (showAdminPassword = !showAdminPassword)} disabled={isAuthLoading}>
+					{#if showAdminPassword}<EyeOff size={17} aria-hidden="true" />{:else}<Eye size={17} aria-hidden="true" />{/if}
+				</button>
+			</div>
 
 			{#if authError}
 				<Alert variant="destructive" class="mt-2">
@@ -249,14 +306,14 @@
 			<AlertDialog.Cancel onclick={handleAuthCancel} disabled={isAuthLoading}>
 				Cancel
 			</AlertDialog.Cancel>
-			<AlertDialog.Action onclick={verifyAdminPassword} disabled={isSubmitDisabled} class="gap-2">
+			<Button onclick={verifyAdminPassword} disabled={isSubmitDisabled} class="gap-2">
 				<KeyRound class="size-4" />
 				{#if isAuthLoading}
 					Verifying...
 				{:else}
 					Access Page
 				{/if}
-			</AlertDialog.Action>
+			</Button>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
 </AlertDialog.Root>
@@ -265,7 +322,7 @@
 {#if isAuthenticated}
 	<main class="min-h-[100svh] w-full bg-background text-foreground">
 		{#key $listStore}
-			<AdminNavbar></AdminNavbar>
+			<AdminNavbar onLogout={logoutAdmin}></AdminNavbar>
 
 			<div class="mx-auto max-w-[1440px] px-4 py-8 sm:px-8 lg:py-10">
 				<div class="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
@@ -301,26 +358,38 @@
 				</div>
 
 				<section class="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-					<div class="flex flex-col gap-4 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+					<div class="flex flex-col gap-4 border-b border-border p-5 lg:flex-row lg:items-center lg:justify-between sm:px-6">
 						<div>
 							<h2 class="text-lg font-bold text-foreground">Managed terms</h2>
 							<p class="mt-1 text-sm text-muted-foreground">Search, edit, add, or remove language suggestions.</p>
 						</div>
-						<div class="flex flex-col gap-2 sm:flex-row">
-					<Input
-						placeholder="Filter by Term..."
-						value={(table.getColumn('term')?.getFilterValue() as string) ?? ''}
-						onchange={(e) => {
-							table.getColumn('term')?.setFilterValue(e.currentTarget.value);
-						}}
-						oninput={(e) => {
-							table.getColumn('term')?.setFilterValue(e.currentTarget.value);
-						}}
-						class="w-full sm:w-64"
-						disabled={isLoading}
-					/>
+						<div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+						<div class="min-w-0 flex-1 sm:min-w-72">
+						<div class="relative w-full">
+							<label for="term-search" class="sr-only">Search the term library</label>
+							<Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+							<Input
+								id="term-search"
+								placeholder="Search terms, alternatives, guidance…"
+								value={globalFilter}
+								oninput={(event) => updateSearch(event.currentTarget.value)}
+								class="pl-9 pr-10"
+								autocomplete="off"
+								aria-describedby="term-search-help"
+								disabled={isLoading}
+							/>
+							{#if globalFilter}
+								<button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Clear search" title="Clear search" onclick={() => updateSearch('')}>
+									<X size={15} aria-hidden="true" />
+								</button>
+							{/if}
+						</div>
+						<p id="term-search-help" class="mt-1.5 text-xs text-muted-foreground">Search term names, alternatives, categories, examples, and guidance. All words must match.</p>
+						</div>
+						<div class="flex items-center gap-2">
 						<AddTermForm {data}></AddTermForm>
 						<TermLibraryTransfer />
+						</div>
 						</div>
 				</div>
 				{#if loadError}
@@ -370,56 +439,57 @@
 									</Table.Row>
 								{:else}
 									<Table.Row>
-										<Table.Cell colspan={columns.length} class="h-24 text-center"
-											>No results.</Table.Cell
-										>
+										<Table.Cell colspan={columns.length} class="h-24 text-center">
+											{#if globalFilter.trim()}
+												No terms match: {globalFilter}. Try another search.
+											{:else}
+												No terms have been added yet.
+											{/if}
+										</Table.Cell>
 									</Table.Row>
 								{/each}
 							{/if}
 						</Table.Body>
 					</Table.Root>
-					<div class="flex flex-col items-start justify-between gap-4 border-t border-border px-5 py-4 sm:flex-row sm:items-center sm:px-6">
-						<div class="flex flex-1 items-center justify-between gap-2">
-							<Button
-								size="sm"
-								variant="destructive"
-								onclick={openDeleteDialog}
-								disabled={isLoading || table.getSelectedRowModel().rows.length == 0}
-								>Delete Selected Row(s)</Button
-							>
-							<div class="flex-1 text-sm text-muted-foreground">
-								{#if isLoading}
-									Loading...
-								{:else}
-									{table.getFilteredSelectedRowModel().rows.length} of{' '}
-									{table.getFilteredRowModel().rows.length} row(s) selected.
-								{/if}
-							</div>
+					<div class="flex flex-col gap-4 border-t border-border bg-muted/20 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+						<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
+							<Button size="sm" variant="destructive" onclick={openDeleteDialog} disabled={isLoading || table.getSelectedRowModel().rows.length === 0}>Delete selected ({table.getSelectedRowModel().rows.length})</Button>
+							<p class="text-sm text-muted-foreground" aria-live="polite">
+								{#if isLoading}Loading terms…{:else}{table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} selected{/if}
+							</p>
 						</div>
-						<div class="flex items-center justify-center gap-2">
-							<p class="text-sm text-muted-foreground">
-								{#if isLoading}
-									Loading...
-								{:else}
-									page {table.getState().pagination.pageIndex + 1} out of {table.getPageCount()}
+						<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
+							<p class="whitespace-nowrap text-sm text-muted-foreground" aria-live="polite">
+								{#if isLoading}Loading…{:else}
+									{table.getFilteredRowModel().rows.length === 0 ? 0 : table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}–{Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, table.getFilteredRowModel().rows.length)} of {table.getFilteredRowModel().rows.length} terms
 								{/if}
 							</p>
-							<Button
-								variant="outline"
-								size="sm"
-								onclick={() => table.previousPage()}
-								disabled={isLoading || !table.getCanPreviousPage()}
-							>
-								Previous
-							</Button>
-							<Button
-								variant="outline"
-								size="sm"
-								onclick={() => table.nextPage()}
-								disabled={isLoading || !table.getCanNextPage()}
-							>
-								Next
-							</Button>
+							<div class="flex items-center justify-between gap-2 sm:justify-start">
+								<label for="terms-page-size" class="whitespace-nowrap text-sm text-muted-foreground">Rows per page</label>
+								<select id="terms-page-size" class="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" value={pagination.pageSize} disabled={isLoading} onchange={(event) => table.setPageSize(Number(event.currentTarget.value))}>
+									{#each [10, 25, 50, 100] as size}<option value={size}>{size}</option>{/each}
+								</select>
+							</div>
+							<nav class="flex items-center justify-center gap-1" aria-label="Term library pages">
+								<Button variant="outline" size="icon" class="hidden h-9 w-9 sm:inline-flex" aria-label="First page" title="First page" onclick={() => table.setPageIndex(0)} disabled={isLoading || !table.getCanPreviousPage()}><ChevronsLeft aria-hidden="true" /></Button>
+								<Button variant="outline" size="icon" class="h-9 w-9" aria-label="Previous page" title="Previous page" onclick={() => table.previousPage()} disabled={isLoading || !table.getCanPreviousPage()}><ChevronLeft aria-hidden="true" /></Button>
+								<span class="whitespace-nowrap px-2 text-sm font-medium text-muted-foreground sm:hidden" aria-live="polite">Page {pagination.pageIndex + 1} of {pageWindow.count}</span>
+								{#if pageWindow.count <= 5}
+									{#each Array.from({ length: pageWindow.count }, (_, index) => index) as pageIndex (pageIndex)}
+										<Button variant={pagination.pageIndex === pageIndex ? 'secondary' : 'ghost'} size="icon" class="hidden h-9 w-9 sm:inline-flex" aria-label={`Page ${pageIndex + 1}`} aria-current={pagination.pageIndex === pageIndex ? 'page' : undefined} onclick={() => table.setPageIndex(pageIndex)} disabled={isLoading}>{pageIndex + 1}</Button>
+									{/each}
+								{:else}
+									<Button variant={pagination.pageIndex === 0 ? 'secondary' : 'ghost'} size="icon" class="hidden h-9 w-9 sm:inline-flex" aria-label="Page 1" aria-current={pagination.pageIndex === 0 ? 'page' : undefined} onclick={() => table.setPageIndex(0)} disabled={isLoading}>1</Button>
+									{#if pageWindow.start > 1}<span class="hidden px-0.5 text-muted-foreground sm:inline" aria-hidden="true">…</span>{/if}
+									{#each pageWindow.middle as pageIndex (pageIndex)}
+										<Button variant={pagination.pageIndex === pageIndex ? 'secondary' : 'ghost'} size="icon" class="hidden h-9 w-9 sm:inline-flex" aria-label={`Page ${pageIndex + 1}`} aria-current={pagination.pageIndex === pageIndex ? 'page' : undefined} onclick={() => table.setPageIndex(pageIndex)} disabled={isLoading}>{pageIndex + 1}</Button>
+									{/each}
+									{#if pageWindow.end < pageWindow.count - 1}<span class="hidden px-0.5 text-muted-foreground sm:inline" aria-hidden="true">…</span>{/if}
+									<Button variant={pagination.pageIndex === pageWindow.count - 1 ? 'secondary' : 'ghost'} size="icon" class="hidden h-9 w-9 sm:inline-flex" aria-label={`Page ${pageWindow.count}`} aria-current={pagination.pageIndex === pageWindow.count - 1 ? 'page' : undefined} onclick={() => table.setPageIndex(pageWindow.count - 1)} disabled={isLoading}>{pageWindow.count}</Button>
+								{/if}
+								<Button variant="outline" size="icon" class="h-9 w-9" aria-label="Next page" title="Next page" onclick={() => table.nextPage()} disabled={isLoading || !table.getCanNextPage()}><ChevronRight aria-hidden="true" /></Button>
+								<Button variant="outline" size="icon" class="hidden h-9 w-9 sm:inline-flex" aria-label="Last page" title="Last page" onclick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={isLoading || !table.getCanNextPage()}><ChevronsRight aria-hidden="true" /></Button>
+							</nav>
 						</div>
 					</div>
 				</div>

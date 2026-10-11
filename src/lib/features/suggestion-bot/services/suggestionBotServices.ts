@@ -5,7 +5,7 @@ import { progressStore } from '$lib/stores/progressStore';
 import { get } from 'svelte/store';
 import { revisedTextStore } from '$lib/stores/revisedTextStore';
 import { toast } from 'svelte-sonner';
-import { preferenceStore } from '$lib/stores/preferenceStore';
+import { getSavedPronounPreferenceMap } from '$lib/features/suggestion-bot/entities/formSchema';
 import { ignoreGrammarStore } from '$lib/stores/ignoreStore';
 import { getCount } from './countService';
 import { env } from '$env/dynamic/public';
@@ -80,35 +80,7 @@ export async function grammarCheckService(nextSlide: () => void) {
 }
 
 export async function glfCheckService(nextSlide: () => void) {
-	const preferenceList = () => {
-		// if any preference is empty roll back to this one
-		if (get(preferenceStore).length === 0) {
-			return { Nyala: 'gender_fair' };
-		} else {
-			const preferences = JSON.parse(
-				localStorage.getItem('preferences') || `[{"Nyala": "gender_fair"}]`
-			) as {
-				name: string;
-				pronoun: string;
-			}[];
-
-			const preferenceMap = preferences.reduce(
-				(acc: { [key: string]: string }, element: { name: string; pronoun: string }) => {
-					acc[element.name] = element.pronoun;
-					return acc;
-				},
-				{}
-			);
-
-			// if any preference is an empty string roll back to this one
-			if (Object.keys(preferenceMap).includes('') || preferenceMap[''] == '')
-				return { Nyala: 'gender_fair' };
-
-			return preferenceMap;
-		}
-	};
-
-	console.log('preference', preferenceList());
+	const preferenceMap = getSavedPronounPreferenceMap();
 
 	// For Deployment
 	try {
@@ -119,7 +91,7 @@ export async function glfCheckService(nextSlide: () => void) {
 			},
 			body: JSON.stringify({
 				prompt: get(textContent),
-				pronoun_map: preferenceList()
+				pronoun_map: preferenceMap
 			})
 		});
 

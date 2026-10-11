@@ -16,10 +16,10 @@ Inkclusive is an inclusive-writing assistant built with SvelteKit, TypeScript, a
 - `/scan` - extract text from PDF, DOCX, JPG, JPEG, and PNG files, with status, error, and cancel feedback.
 - `/history` - view or clear review sessions saved in browser IndexedDB.
 - `/admin` - manage term alternatives, categories, guidance, and examples; import or export the library as CSV.
-- SvelteKit `/api/extract/*`, `/api/docx`, and `/api/verify` - server endpoints for extraction/export helpers and the admin password prompt.
+- SvelteKit `/api/extract/*`, `/api/docx`, and `/api/admin/*` - server endpoints for extraction/export helpers and protected admin sessions.
 - FastAPI `/api/v1/grammar`, `/api/v1/gfl`, `/api/v1/count`, and `/api/v1/terms/*` - versioned language analysis and term library API.
 
-The admin password prompt only protects the frontend UI. The FastAPI term endpoints do not currently enforce authentication; put backend authorization in place before exposing term management publicly.
+Admin sign-in is verified by the FastAPI backend. Term-management requests are proxied through same-origin SvelteKit endpoints, which keep the expiring backend token in an HttpOnly cookie. Configure `ADMIN_PASSWORD` and a random `ADMIN_TOKEN_SECRET` of at least 32 bytes on the backend, plus `PUBLIC_BACKEND_URL` for the frontend. Admins can change their password from the admin header; the backend stores a salted hash in `ADMIN_CREDENTIALS_FILE` (default `./admin_credentials.json`), so point it at persistent storage when deploying.
 
 The former `/dashboard/editor`, `/dashboard/scan`, and `/dashboard/history` URLs redirect to `/write`, `/scan`, and `/history` respectively.
 
@@ -32,7 +32,7 @@ The former `/dashboard/editor`, `/dashboard/scan`, and `/dashboard/history` URLs
 
 ## Setup
 
-Use Node.js 20 or newer. Set `PUBLIC_BACKEND_URL` to the FastAPI base URL; a trailing slash is optional. Set `ADMIN_PASSWORD` for the frontend admin prompt.
+Use Node.js 20 or newer. Set `PUBLIC_BACKEND_URL` to the FastAPI base URL; a trailing slash is optional.
 
 ```sh
 npm ci
@@ -58,13 +58,14 @@ The client uses Tailwind CSS 4 through its Vite plugin, the SvelteKit Netlify ad
 | Variable | Purpose |
 | --- | --- |
 | `PUBLIC_BACKEND_URL` | Browser-visible base URL of the FastAPI service; a trailing slash is optional. |
-| `ADMIN_PASSWORD` | Password checked by the SvelteKit `/api/verify` route. It does not protect FastAPI term endpoints. |
+| `ADMIN_PASSWORD` | Set on the backend; used by the API to authenticate admin sign-in. |
+| `ADMIN_TOKEN_SECRET` | Set on the backend; random secret of at least 32 bytes used to sign expiring admin tokens. |
 
 Netlify uses `npm run build`; its adapter output is configured in `netlify.toml`.
 
 ## Setup
 
-Use Node.js 20 or newer. Copy `.env.example` to `.env`, then set `PUBLIC_BACKEND_URL` to the backend base URL, including its trailing slash. Choose a private `ADMIN_PASSWORD` for the client-side admin prompt.
+Use Node.js 20 or newer. Set `PUBLIC_BACKEND_URL` to the backend base URL; a trailing slash is optional. Configure admin credentials on the backend as described in its README.
 
 ```sh
 npm ci
@@ -89,7 +90,8 @@ The app uses Tailwind CSS 4 through its Vite plugin, SvelteKit's Netlify adapter
 
 | Variable | Purpose |
 | --- | --- |
-| `PUBLIC_BACKEND_URL` | Base URL of the FastAPI server; keep the trailing slash. This is public because the browser calls the API directly. |
-| `ADMIN_PASSWORD` | Password compared by the SvelteKit `/api/verify` route. It does not authenticate requests to the backend's `/terms` endpoints. |
+| `PUBLIC_BACKEND_URL` | Base URL of the FastAPI server; a trailing slash is optional. The browser uses same-origin SvelteKit proxy routes for admin requests. |
+| `ADMIN_PASSWORD` | Configure on the backend only; it is checked by the backend admin login endpoint. |
+| `ADMIN_TOKEN_SECRET` | Configure on the backend only; random secret of at least 32 bytes used to sign admin session tokens. |
 
 The Netlify build uses `npm run build` and publishes the adapter output as configured in `netlify.toml`.

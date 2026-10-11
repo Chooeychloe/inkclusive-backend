@@ -2,24 +2,19 @@ import { refreshStore } from '$lib/stores/refreshStore';
 import { get } from 'svelte/store';
 import type { TGenderTermProcessed } from './column';
 import { toast } from 'svelte-sonner';
-import { env } from '$env/dynamic/public';
 
 export type TermRecord = { term: string; options: string[]; category: string; guidance: string; examples: string[] };
-
-const baseUrl = env.PUBLIC_BACKEND_URL?.replace(/\/+$/, '');
-function endpoint(path: string) {
-	if (!baseUrl) throw new Error('PUBLIC_BACKEND_URL is not configured.');
-	return `${baseUrl}/api/v1/${path}`;
-}
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 	let response: Response;
 	try {
 		const headers = new Headers(init.headers);
-		if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-		response = await fetch(endpoint(path), {
+		if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+		response = await fetch(`/api/admin/${path}`, {
 			...init,
-			headers
+			headers,
+			credentials: 'same-origin',
+			cache: 'no-store'
 		});
 	} catch (error) {
 		throw new Error(error instanceof Error ? error.message : 'The API could not be reached.');

@@ -8,7 +8,7 @@
 	import { progressStore } from '$lib/stores/progressStore';
 	import { toast } from 'svelte-sonner';
 	import { textContent } from '$lib/stores/textFromEditorStore';
-	import { preferenceStore } from '$lib/stores/preferenceStore';
+	import { getSavedPronounPreferenceMap } from '$lib/features/suggestion-bot/entities/formSchema';
 	import { env } from '$env/dynamic/public';
 	import { onMount } from 'svelte';
 	import { GLFScore } from '$lib/stores/omegaLOL';
@@ -100,32 +100,7 @@
 				$waitStore = false;
 			}
 		} else if (bruh == 'gfl') {
-			const preferenceList = () => {
-				if ($preferenceStore.length === 0) {
-					return { Nyala: 'gender_fair' };
-				} else {
-					const preferences = JSON.parse(
-						localStorage.getItem('preferences') || `[{"Nyala": "gender_fair"}]`
-					) as {
-						name: string;
-						pronoun: string;
-					}[];
-
-					const preferenceMap = preferences.reduce(
-						(acc: { [key: string]: string }, element: { name: string; pronoun: string }) => {
-							acc[element.name] = element.pronoun;
-							return acc;
-						},
-						{}
-					);
-
-					// if any preference is an empty string roll back to this one
-					if (Object.keys(preferenceMap).includes('') || preferenceMap[''] == '')
-						return { Nyala: 'gender_fair' };
-
-					return preferenceMap;
-				}
-			};
+			const preferenceMap = getSavedPronounPreferenceMap();
 
 			try {
 				const post = await fetch(`${apiUrl}gfl`, {
@@ -133,7 +108,7 @@
 					headers: {
 						'Content-Type': 'application/json'
 					},
-					body: JSON.stringify({ prompt: $textContent, pronoun_map: preferenceList() })
+					body: JSON.stringify({ prompt: $textContent, pronoun_map: preferenceMap })
 				});
 
 				if (!post.ok) {
