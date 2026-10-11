@@ -3,7 +3,7 @@
 
 	import { EditorState } from 'prosemirror-state';
 	import { EditorView } from 'prosemirror-view';
-	import { DOMParser, DOMSerializer } from 'prosemirror-model';
+	import { DOMSerializer } from 'prosemirror-model';
 	import { cn } from '$lib/utils';
 	import { textContent, textContentHTML, textTitle } from '$lib/stores/textFromEditorStore';
 	import mySchema from '$lib/features/rich-text-editor/entities/Schema';
@@ -23,7 +23,8 @@
 	import { buildInputRules } from '../use-case/inputRules';
 	import { signalTextEditor } from '$lib/stores/signalStore';
 	import { cleanPastePlugin } from '$lib/features/rich-text-editor/use-case/cleanPastePlugin';
-	import { writeLocalDraft } from '$lib/features/rich-text-editor/services/localDraft';
+	import { createDocFromText } from '$lib/features/rich-text-editor/use-case/createDocFromText';
+	import { clearLocalDraft, writeLocalDraft } from '$lib/features/rich-text-editor/services/localDraft';
 
 	let editorContainer: HTMLDivElement | null = $state(null);
 	let view: EditorView | null = $state(null);
@@ -33,7 +34,11 @@
 
 	$effect(() => {
 		const draft = { text: $textContent, html: $textContentHTML, title: $textTitle || 'Scanned document' };
-		if (!draft.text.trim()) return;
+		if (!draft.text.trim()) {
+			clearLocalDraft();
+			draftStatus = '';
+			return;
+		}
 		draftStatus = 'Saving local draft…';
 		if (draftTimer) clearTimeout(draftTimer);
 		draftTimer = setTimeout(() => {
@@ -62,9 +67,8 @@
 
 	// when stores has changed, the plugins must be reconfigured
 	function reinitializeText(view: EditorView) {
-		const node = view.state.schema.text($textContent);
-
-		const tr = view.state.tr.replaceWith(0, view.state.doc.content.size, node);
+		const doc = createDocFromText($textContent);
+		const tr = view.state.tr.replaceWith(0, view.state.doc.content.size, doc.content);
 		view.dispatch(tr);
 	}
 
@@ -115,9 +119,7 @@
 	onMount(() => {
 		const state = EditorState.create({
 			schema: mySchema,
-			doc: DOMParser.fromSchema(mySchema).parse(
-				document.createRange().createContextualFragment($textContent)
-			),
+			doc: createDocFromText($textContent),
 			plugins: [
 				keymap(baseKeymap),
 				extendedKeyMap,
@@ -154,17 +156,17 @@
 	});
 </script>
 
-<div class="flex flex-1 flex-col items-center bg-card xl:h-full">
+<div class="flex w-full min-w-0 flex-1 flex-col items-center bg-card xl:h-full">
 	<p class="sr-only" role="status" aria-live="polite">{draftStatus}</p>
 	<ScrollArea
-		class="max-h-[400px] w-full flex-1 shadow-inner focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary lg:max-h-[600px] xl:max-h-[800px]"
+		class="min-h-[240px] max-h-[400px] w-full min-w-0 flex-1 shadow-inner focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary lg:max-h-[600px] xl:max-h-[800px]"
 		onclick={() => {
 			if ($progressStore > 0) {
 				toast.info('You can only edit text during the Write Step');
 			}
 		}}
 	>
-		<div class="flex h-full w-full items-start justify-center">
+		<div class="flex h-full min-h-[220px] w-full min-w-0 items-start justify-center">
 			<div
 				bind:this={editorContainer}
 				class={cn(

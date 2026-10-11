@@ -28,6 +28,7 @@
 	import { signalTextEditor } from '$lib/stores/signalStore';
 	import { buildInputRules } from '$lib/features/document-scan/use-case/inputRules';
 	import { cleanPastePlugin } from '../use-case/cleanPastePlugin';
+	import { createDocFromText } from '../use-case/createDocFromText';
 	import { driver } from 'driver.js';
 
 	import { tourStore } from '$lib/stores/tourStore';
@@ -74,8 +75,8 @@
 
 	// when stores has changed, the plugins must be reconfigured
 	function reinitializeText(view: EditorView) {
-		const node = view.state.schema.text($textContent);
-		const tr = view.state.tr.replaceWith(0, view.state.doc.content.size, node);
+		const doc = createDocFromText($textContent);
+		const tr = view.state.tr.replaceWith(0, view.state.doc.content.size, doc.content);
 		view.dispatch(tr);
 	}
 

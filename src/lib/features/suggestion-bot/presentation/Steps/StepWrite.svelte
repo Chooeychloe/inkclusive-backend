@@ -19,8 +19,15 @@
 		<Card.Title class="border-b border-dashed border-stone-500 pb-2 font-bold text-purple-900"
 			>Step 1: Write</Card.Title
 		>
-		<Card.Description
-			>Text needs 26–600 words to begin.
+		<Card.Description role={wordCount > 600 ? 'alert' : 'status'} aria-live="polite">
+			{#if wordCount > 600}
+				Word limit exceeded: your text has {wordCount} words. The maximum is 600; remove
+				{wordCount - 600} words to continue.
+			{:else if wordCount < 26}
+				Enter at least 26 words to begin ({wordCount}/600 words).
+			{:else}
+				{wordCount}/600 words. You can continue.
+			{/if}
 		</Card.Description>
 	</Card.Header>
 	<Card.Content>
